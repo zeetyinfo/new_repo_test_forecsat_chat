@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { BusinessUnit, LineOfBusiness } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 function LobItem({ lob, buColor }: { lob: LineOfBusiness; buColor: string }) {
   const { state, dispatch } = useApp();
@@ -125,12 +126,15 @@ export default function BuSidebar() {
             {businessUnits.map((bu) => (
                 <AccordionItem value={bu.id} key={bu.id}>
                 <AccordionTrigger 
-                    className={cn("px-4 py-3 hover:no-underline hover:bg-muted/50", selectedBu?.id === bu.id && "bg-muted")}
+                    className={cn("px-4 py-3 hover:no-underline hover:bg-muted/50 text-left", selectedBu?.id === bu.id && "bg-muted")}
                     onClick={() => handleBuSelect(bu)}
-                    style={selectedBu?.id === bu.id ? { backgroundColor: bu.color, color: 'white' } : {}}
+                    style={{
+                        backgroundColor: selectedBu?.id === bu.id ? bu.color : undefined,
+                        color: selectedBu?.id === bu.id ? 'white' : undefined
+                    }}
                 >
                     <div className="flex items-center gap-3">
-                        <Folder className="h-4 w-4" style={selectedBu?.id === bu.id ? { color: 'white' } : { color: bu.color }} />
+                        <Folder className="h-4 w-4" style={{ color: selectedBu?.id === bu.id ? 'white' : bu.color }} />
                         <span className="font-medium">{bu.name}</span>
                     </div>
                 </AccordionTrigger>
