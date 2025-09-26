@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer } from 'react';
 import type { BusinessUnit, LineOfBusiness, ChatMessage, WorkflowStep } from '@/lib/types';
 import { mockBusinessUnits, mockWorkflow } from '@/lib/data';
+import type { AgentMonitorProps } from '@/lib/types';
 
 type AppState = {
   businessUnits: BusinessUnit[];
@@ -11,6 +12,7 @@ type AppState = {
   messages: ChatMessage[];
   workflow: WorkflowStep[];
   isProcessing: boolean;
+  agentMonitor: AgentMonitorProps;
 };
 
 type Action =
@@ -20,21 +22,26 @@ type Action =
   | { type: 'UPDATE_LAST_MESSAGE'; payload: Partial<ChatMessage> }
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'UPDATE_WORKFLOW_STEP'; payload: Partial<WorkflowStep> & { id: string } }
-  | { type: 'RESET_WORKFLOW' };
+  | { type: 'RESET_WORKFLOW' }
+  | { type: 'SET_AGENT_MONITOR_OPEN'; payload: boolean };
+
 
 const initialState: AppState = {
   businessUnits: mockBusinessUnits,
-  selectedBu: null,
-  selectedLob: null,
+  selectedBu: mockBusinessUnits[0],
+  selectedLob: mockBusinessUnits[0].lobs[0],
   messages: [
     {
       id: '1',
       role: 'assistant',
-      content: "Hello! I'm your BI forecasting assistant. Notice the Agent Monitor (left) and the Workflow Tree (right). Let's start by selecting a Business Unit.",
+      content: "Hello! I'm your BI forecasting assistant. I see you have Premium Order Services selected. What would you like to do?",
     },
   ],
   workflow: mockWorkflow,
   isProcessing: false,
+  agentMonitor: {
+    isOpen: false,
+  },
 };
 
 function appReducer(state: AppState, action: Action): AppState {
@@ -65,6 +72,8 @@ function appReducer(state: AppState, action: Action): AppState {
       };
     case 'RESET_WORKFLOW':
         return { ...state, workflow: mockWorkflow };
+    case 'SET_AGENT_MONITOR_OPEN':
+        return { ...state, agentMonitor: { ...state.agentMonitor, isOpen: action.payload } };
     default:
       return state;
   }
@@ -77,7 +86,7 @@ type AppContextType = {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
   return (

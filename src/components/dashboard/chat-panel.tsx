@@ -1,5 +1,6 @@
 'use client';
 
+import React, { FormEvent, useEffect, useRef, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,14 +8,115 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bot, Paperclip, Send, User } from 'lucide-react';
 import { useApp } from './app-provider';
-import { FormEvent, useRef, useEffect } from 'react';
-import type { ChatMessage } from '@/lib/types';
+import type { ChatMessage, WorkflowStep } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { getContextualHelp } from '@/ai/flows/chatbot-contextual-help';
 import placeholderImages from '@/lib/placeholder-images.json';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { BarChart, LineChart, Table } from 'lucide-react';
+import {
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ComposedChart,
+} from 'recharts';
+import OpenAI from 'openai';
+import { mockBusinessUnits } from '@/lib/data';
 
 const userAvatar = placeholderImages.placeholderImages.find(p => p.id === 'user-avatar');
 const assistantAvatar = placeholderImages.placeholderImages.find(p => p.id === 'assistant-avatar');
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true, // Only for demo - use backend in production
+});
+
+class IntelligentChatHandler {
+  conversationHistory: { role: 'user' | 'assistant' | 'system'; content: string }[];
+  
+  constructor() {
+    this.conversationHistory = [];
+  }
+
+  async generateResponse(userMessage: string, context: any) {
+    const systemPrompt = this.buildSystemPrompt(context);
+    
+    this.conversationHistory.push({
+      role: "user",
+      content: userMessage
+    });
+
+    // Add system prompt at the beginning of the history for context
+    const messages: any = [
+        { role: "system", content: systemPrompt },
+        ...this.conversationHistory
+    ];
+
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1000
+      });
+
+      const aiResponse = completion.choices[0].message.content;
+      
+      if (aiResponse) {
+        this.conversationHistory.push({
+          role: "assistant",
+          content: aiResponse
+        });
+      }
+
+      return aiResponse || "Sorry, I couldn't generate a response.";
+    } catch (error) {
+      console.error('OpenAI Error:', error);
+      return "Sorry, I'm having trouble connecting to my brain right now. Please try again later.";
+    }
+  }
+
+  buildSystemPrompt(context: any) {
+    const { selectedBu, selectedLob } = context;
+    
+    return `You are an intelligent Business Intelligence forecasting assistant. 
+
+CURRENT CONTEXT:
+- Selected BU: ${selectedBu?.name || 'None'}
+- Selected LOB: ${selectedLob?.name || 'None'}
+- Available LOBs with data: ${this.getAvailableDataSummary()}
+
+AVAILABLE BUSINESS UNITS WITH DATA:
+${mockBusinessUnits.map(bu => `
+- ${bu.name}
+  ${bu.lobs.map(lob => `- ${lob.name} LOB: ${lob.recordCount} weekly records (ready for analysis)`).join('\n  ')}
+`).join('\n')}
+
+INTELLIGENCE REQUIREMENTS:
+- When user asks for forecasting, create a SPECIFIC plan based on the selected LOB data
+- Suggest concrete steps: analyze patterns, preprocess data, train models, generate forecasts
+- Reference the actual data available for their selected LOB
+- Ask intelligent follow-up questions about forecast horizon, business objectives
+- If they haven't selected a LOB, guide them to choose from available data
+- Be dynamic and context-aware, not generic
+
+CRITICAL: Users DO NOT need to upload data for existing LOBs - they have mock data ready to use.
+
+Your responses should be intelligent, specific to their data, and action-oriented.`;
+  }
+
+  getAvailableDataSummary() {
+    return mockBusinessUnits.map(bu => 
+        `${bu.name} - ${bu.lobs.map(l => `${l.name} (${l.recordCount} records)`).join(', ')}`
+    ).join('\n');
+  }
+}
+
+const chatHandler = new IntelligentChatHandler();
 
 function ChatBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
@@ -28,11 +130,11 @@ function ChatBubble({ message }: { message: ChatMessage }) {
       )}
       <div
         className={cn(
-          'max-w-xs rounded-lg p-3 text-sm prose prose-sm',
+          'max-w-prose rounded-lg p-3 text-sm prose prose-sm prose-p:my-2 first:prose-p:mt-0 last:prose-p:mb-0 prose-headings:my-2',
           isUser
             ? 'bg-primary text-primary-foreground'
             : 'bg-muted',
-          'prose-p:m-0 prose-headings:m-0 prose-strong:text-current'
+          'prose-strong:text-current'
         )}
       >
         {message.isTyping ? (
@@ -42,7 +144,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
             <span className="h-2 w-2 animate-pulse rounded-full bg-current" style={{ animationDelay: '0.4s' }} />
           </div>
         ) : (
-          <div dangerouslySetInnerHTML={{ __html: message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+          <div dangerouslySetInnerHTML={{ __html: message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />
         )}
       </div>
       {isUser && (
@@ -55,10 +157,11 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   );
 }
 
+
 export default function ChatPanel({ className }: { className?: string }) {
   const { state, dispatch } = useApp();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-
+  
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({
@@ -85,7 +188,6 @@ export default function ChatPanel({ className }: { className?: string }) {
     dispatch({ type: 'ADD_MESSAGE', payload: userMessage });
     dispatch({ type: 'SET_PROCESSING', payload: true });
     
-    // Add typing indicator
     const typingMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -96,14 +198,13 @@ export default function ChatPanel({ className }: { className?: string }) {
 
 
     try {
-        const { helpText } = await getContextualHelp({
-            businessUnit: state.selectedBu?.name || 'Not selected',
-            lineOfBusiness: state.selectedLob?.name || 'Not selected',
-            query: userInput
+        const responseText = await chatHandler.generateResponse(userInput, {
+            selectedBu: state.selectedBu,
+            selectedLob: state.selectedLob,
         });
 
         const assistantMessage: Partial<ChatMessage> = {
-            content: helpText,
+            content: responseText,
             isTyping: false,
         };
         dispatch({ type: 'UPDATE_LAST_MESSAGE', payload: assistantMessage });
@@ -121,11 +222,7 @@ export default function ChatPanel({ className }: { className?: string }) {
   };
 
   return (
-    <Card className={`flex flex-col ${className}`}>
-      <CardHeader className="flex flex-row items-center gap-2 p-4 border-b">
-        <Bot className="h-6 w-6" />
-        <CardTitle className="text-lg">BI Onboarding Agent</CardTitle>
-      </CardHeader>
+    <Card className={`flex flex-col ${className} border-0 shadow-none rounded-none`}>
       <CardContent className="flex-1 p-0 overflow-hidden">
         <div className="flex flex-col h-full">
           <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>

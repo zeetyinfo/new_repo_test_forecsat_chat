@@ -2,6 +2,14 @@ export type WeeklyData = {
   week: string;
   units: number;
   revenue: number;
+  date: Date;
+};
+
+export type DataQuality = {
+  completeness: number;
+  outliers: number;
+  seasonality: string;
+  trend: string;
 };
 
 export type LineOfBusiness = {
@@ -11,6 +19,8 @@ export type LineOfBusiness = {
   hasData: boolean;
   dataUploaded: Date | null;
   recordCount: number;
+  mockData?: WeeklyData[];
+  dataQuality?: DataQuality;
 };
 
 export type BusinessUnit = {
@@ -59,4 +69,8 @@ export type WorkflowStep = {
   dependencies: string[];
   estimatedTime: string; // e.g., "2m 15s"
   details: string;
+};
+
+export type AgentMonitorProps = {
+  isOpen: boolean;
 };

@@ -11,11 +11,9 @@ export default function Home() {
       <div className="flex flex-col h-screen bg-background text-foreground font-body">
         <Header />
         <main className="flex flex-1 overflow-hidden">
-          <BuSidebar />
-          <div className="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-4 p-4 overflow-y-auto">
-            <AgentMonitorPanel className="xl:col-span-1" />
-            <ChatPanel className="xl:col-span-1" />
-            <WorkflowTree className="xl:col-span-1" />
+          <WorkflowTree className="w-80 hidden md:flex" />
+          <div className="flex-1 flex flex-col">
+            <ChatPanel className="flex-1" />
           </div>
         </main>
       </div>

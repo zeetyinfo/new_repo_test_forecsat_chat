@@ -1,15 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GitMerge, CheckCircle2, AlertCircle, Circle, Clock, GitBranch, MoreVertical, Play } from 'lucide-react';
-import type { WorkflowStep, WorkflowStatus } from '@/lib/types';
+import { GitMerge, CheckCircle2, AlertCircle, Circle, Clock, GitBranch, MoreVertical, Play, Folder } from 'lucide-react';
+import type { WorkflowStep, WorkflowStatus, BusinessUnit } from '@/lib/types';
 import { useApp } from './app-provider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { useEffect } from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const statusConfig: Record<WorkflowStatus, { icon: React.ReactNode; color: string }> = {
   completed: { icon: <CheckCircle2 className="h-5 w-5" />, color: 'text-green-500' },
@@ -27,6 +27,7 @@ function WorkflowNode({ step }: { step: WorkflowStep }) {
         <div className={cn("rounded-full h-10 w-10 flex items-center justify-center bg-muted", config.color)}>
             {React.cloneElement(config.icon as React.ReactElement, { className: "h-6 w-6 text-white"})}
         </div>
+        {/* Render line only if it's not the last step */}
         <div className="w-px h-full bg-border" />
       </div>
       <div className="pb-8 flex-1">
@@ -54,7 +55,7 @@ function WorkflowNode({ step }: { step: WorkflowStep }) {
 
 export default function WorkflowTree({ className }: { className?: string }) {
   const { state, dispatch } = useApp();
-  const { workflow } = state;
+  const { workflow, businessUnits, selectedBu, selectedLob } = state;
 
   useEffect(() => {
     let activeIndex = -1;
@@ -62,7 +63,6 @@ export default function WorkflowTree({ className }: { className?: string }) {
         activeIndex = workflow.findIndex(step => step.status === 'pending');
 
         if(activeIndex === -1 && workflow.every(s => s.status === 'completed')) {
-            // Reset if all completed
             setTimeout(() => dispatch({ type: 'RESET_WORKFLOW' }), 3000);
             return;
         }
@@ -79,22 +79,75 @@ export default function WorkflowTree({ className }: { className?: string }) {
     return () => clearInterval(interval);
   }, [workflow, dispatch]);
 
+  const handleBuSelect = (bu: BusinessUnit) => {
+    dispatch({ type: 'SET_SELECTED_BU', payload: bu });
+    dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `Switched to Business Unit: **${bu.name}**. Please select a Line of Business to proceed.`
+        }
+    })
+  };
+
+  const handleLobSelect = (lob: any) => {
+    dispatch({ type: 'SET_SELECTED_LOB', payload: lob });
+    dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `Great! For **${lob.name}**, I have ${lob.recordCount} records ready. What would you like to do?`
+        }
+    })
+  };
+
 
   return (
-    <Card className={`flex flex-col ${className}`}>
+    <Card className={`flex flex-col ${className} border-r rounded-none`}>
       <CardHeader className="flex flex-row items-center gap-2 p-4 border-b">
         <GitBranch className="h-6 w-6" />
-        <CardTitle className="text-lg">Workflow Tree</CardTitle>
+        <CardTitle className="text-lg">Workflow & Data</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 p-0 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="p-4">
-            <ol>
-              {workflow.filter(step => step.id !== 'step-4-alt').map((step, index, arr) => (
-                <WorkflowNode key={step.id} step={step} />
-              ))}
-            </ol>
-          </div>
+            <Accordion type="single" collapsible className="w-full" defaultValue={selectedBu?.id}>
+            {businessUnits.map((bu) => (
+                <AccordionItem value={bu.id} key={bu.id}>
+                    <AccordionTrigger 
+                        className={cn("px-4 py-3 hover:no-underline hover:bg-muted/50 text-left", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}
+                        onClick={() => handleBuSelect(bu)}
+                    >
+                        <div className="flex items-center gap-3">
+                            <Folder className="h-4 w-4" style={{ color: bu.color }} />
+                            <span className="font-medium">{bu.name}</span>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pl-8 pr-4 pt-0 pb-2 space-y-1">
+                        {bu.lobs.map((lob) => (
+                        <Button
+                            key={lob.id}
+                            variant={selectedLob?.id === lob.id ? 'secondary' : 'ghost'}
+                            className="w-full justify-start"
+                            onClick={() => handleLobSelect(lob)}
+                        >
+                            {lob.name} ({lob.recordCount} records)
+                        </Button>
+                        ))}
+                    </AccordionContent>
+                </AccordionItem>
+            ))}
+            </Accordion>
+
+            <div className='p-4'>
+                <h3 className="text-sm font-semibold text-muted-foreground px-1 mb-4 mt-2">CURRENT PLAN</h3>
+                <ol className='relative'>
+                {workflow.filter(step => step.id !== 'step-4-alt').map((step, index, arr) => (
+                    <WorkflowNode key={step.id} step={step} />
+                ))}
+                </ol>
+            </div>
         </ScrollArea>
       </CardContent>
     </Card>

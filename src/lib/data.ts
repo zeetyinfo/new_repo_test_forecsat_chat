@@ -1,27 +1,70 @@
-import type { BusinessUnit, Agent, AgentCommunication, WorkflowStep } from './types';
+import type { BusinessUnit, Agent, AgentCommunication, WorkflowStep, WeeklyData } from './types';
+
+// Mock Data Generator
+function generateWeeklyData(totalRecords: number, lobType: string): WeeklyData[] {
+  const data: WeeklyData[] = [];
+  const baseValue: { [key: string]: number } = {
+    'premium-phone': 45,
+    'premium-chat': 32,
+    'mass-phone': 120,
+    'mass-chat': 85,
+    'ecom-phone': 95,
+    'ecom-chat': 67
+  }[lobType] || 50;
+
+  for (let week = 1; week <= 52; week++) {
+    const seasonalMultiplier = 1 + 0.2 * Math.sin((week / 52) * 2 * Math.PI);
+    const weeklyMultiplier = week % 7 < 5 ? 1.2 : 0.8; // Weekday vs weekend
+    const randomVariation = 0.9 + Math.random() * 0.2;
+    
+    data.push({
+      week: `2024-W${week.toString().padStart(2, '0')}`,
+      units: Math.round(baseValue * seasonalMultiplier * weeklyMultiplier * randomVariation),
+      revenue: Math.round(baseValue * seasonalMultiplier * weeklyMultiplier * randomVariation * 150),
+      date: new Date(2024, 0, week * 7)
+    });
+  }
+  
+  return data;
+}
+
 
 export const mockBusinessUnits: BusinessUnit[] = [
   {
     id: 'bu-premium',
     name: 'Premium Order Services',
-    description: 'High-value customer service operations with premium support',
-    color: '#8B5CF6', // Purple theme
+    description: 'High-value customer service operations',
+    color: '#8B5CF6',
     lobs: [
       {
         id: 'lob-premium-phone',
         name: 'Phone',
         description: 'Premium phone support services',
-        hasData: true, // Mock data available
+        hasData: true,
         dataUploaded: new Date('2024-01-10'),
-        recordCount: 1250
+        recordCount: 1250,
+        mockData: generateWeeklyData(1250, 'premium-phone'),
+        dataQuality: {
+          completeness: 98.5,
+          outliers: 3,
+          seasonality: 'strong_weekly',
+          trend: 'increasing'
+        }
       },
       {
-        id: 'lob-premium-chat', 
-        name: 'Chat',
+        id: 'lob-premium-chat',
+        name: 'Chat', 
         description: 'Premium chat support services',
-        hasData: true, // Mock data available
+        hasData: true,
         dataUploaded: new Date('2024-01-10'),
-        recordCount: 890
+        recordCount: 890,
+        mockData: generateWeeklyData(890, 'premium-chat'),
+        dataQuality: {
+          completeness: 96.2,
+          outliers: 5,
+          seasonality: 'moderate_weekly',
+          trend: 'stable'
+        }
       }
     ]
   },
@@ -29,7 +72,7 @@ export const mockBusinessUnits: BusinessUnit[] = [
     id: 'bu-mass',
     name: 'Mass Order Services',
     description: 'High-volume customer service operations',
-    color: '#10B981', // Green theme
+    color: '#10B981',
     lobs: [
       {
         id: 'lob-mass-phone',
@@ -37,43 +80,72 @@ export const mockBusinessUnits: BusinessUnit[] = [
         description: 'Mass market phone support',
         hasData: true,
         dataUploaded: new Date('2024-01-08'),
-        recordCount: 3450
+        recordCount: 3450,
+        mockData: generateWeeklyData(3450, 'mass-phone'),
+        dataQuality: {
+          completeness: 94.8,
+          outliers: 12,
+          seasonality: 'strong_weekly_monthly',
+          trend: 'increasing'
+        }
       },
       {
         id: 'lob-mass-chat',
-        name: 'Chat', 
+        name: 'Chat',
         description: 'Mass market chat support',
         hasData: true,
         dataUploaded: new Date('2024-01-08'),
-        recordCount: 2100
+        recordCount: 2100,
+        mockData: generateWeeklyData(2100, 'mass-chat'),
+        dataQuality: {
+          completeness: 97.1,
+          outliers: 7,
+          seasonality: 'moderate_weekly',
+          trend: 'stable'
+        }
       }
     ]
   },
   {
     id: 'bu-ecom',
     name: 'ECOM',
-    description: 'E-commerce platform services and support',
-    color: '#F59E0B', // Amber theme
+    description: 'E-commerce platform services',
+    color: '#F59E0B',
     lobs: [
       {
         id: 'lob-ecom-phone',
         name: 'Phone',
         description: 'E-commerce phone support',
-        hasData: false, // No data yet - user needs to upload
-        dataUploaded: null,
-        recordCount: 0
+        hasData: true, // NOW HAS MOCK DATA
+        dataUploaded: new Date('2024-01-12'),
+        recordCount: 2800,
+        mockData: generateWeeklyData(2800, 'ecom-phone'),
+        dataQuality: {
+          completeness: 99.1,
+          outliers: 8,
+          seasonality: 'strong_weekly_seasonal',
+          trend: 'increasing'
+        }
       },
       {
         id: 'lob-ecom-chat',
         name: 'Chat',
-        description: 'E-commerce chat support', 
-        hasData: false, // No data yet - user needs to upload
-        dataUploaded: null,
-        recordCount: 0
+        description: 'E-commerce chat support',
+        hasData: true, // NOW HAS MOCK DATA
+        dataUploaded: new Date('2024-01-12'),
+        recordCount: 1950,
+        mockData: generateWeeklyData(1950, 'ecom-chat'),
+        dataQuality: {
+          completeness: 98.7,
+          outliers: 4,
+          seasonality: 'strong_weekly_seasonal',
+          trend: 'increasing'
+        }
       }
     ]
   }
 ];
+
 
 export const mockAgents: Agent[] = [
   {
