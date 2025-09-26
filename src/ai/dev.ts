@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/chatbot-contextual-help.ts';
+import '@/ai/flows/chatbot-suggest-tasks.ts';
+import '@/ai/flows/chatbot-summarize-data.ts';
