@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Activity, Cpu, HardDrive, AlertCircle, CheckCircle, Clock, BarChart2 } from 'lucide-react';
