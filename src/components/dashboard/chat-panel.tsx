@@ -31,7 +31,7 @@ const userAvatar = placeholderImages.placeholderImages.find(p => p.id === 'user-
 const assistantAvatar = placeholderImages.placeholderImages.find(p => p.id === 'assistant-avatar');
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true, // Only for demo - use backend in production
 });
 
