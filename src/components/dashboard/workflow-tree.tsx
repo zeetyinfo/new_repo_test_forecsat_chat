@@ -317,14 +317,18 @@ export default function WorkflowTree({ className }: { className?: string }) {
         <Accordion type="multiple" className="w-full" defaultValue={businessUnits.map(bu => bu.id)}>
             {businessUnits.map((bu) => (
             <AccordionItem value={bu.id} key={bu.id}>
-                <AccordionTrigger 
-                    className={cn("px-4 py-2 hover:no-underline hover:bg-muted/50 text-left group", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}
-                    onClick={() => handleBuSelect(bu)}
+                <div 
+                    className={cn("flex items-center px-4 py-2 hover:bg-muted/50 group", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}
                 >
-                    <div className="flex items-center gap-3 flex-1">
-                        <Folder className="h-4 w-4" style={{ color: bu.color }} />
-                        <span className="font-medium">{bu.name}</span>
-                    </div>
+                    <AccordionTrigger 
+                        className="flex-1 text-left p-0 hover:no-underline"
+                        onClick={() => handleBuSelect(bu)}
+                    >
+                        <div className="flex items-center gap-3 flex-1">
+                            <Folder className="h-4 w-4" style={{ color: bu.color }} />
+                            <span className="font-medium">{bu.name}</span>
+                        </div>
+                    </AccordionTrigger>
                      <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -337,7 +341,7 @@ export default function WorkflowTree({ className }: { className?: string }) {
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
-                </AccordionTrigger>
+                </div>
                 <AccordionContent className="pl-8 pr-4 pt-0 pb-2 space-y-1">
                 {bu.lobs.map((lob) => (
                     <LobItem
@@ -419,3 +423,5 @@ export default function WorkflowTree({ className }: { className?: string }) {
     </Card>
   );
 }
+
+      
