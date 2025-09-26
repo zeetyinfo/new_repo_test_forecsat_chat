@@ -2,7 +2,7 @@
 'use client';
 
 import React, { FormEvent, useEffect, useRef, useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,15 +11,11 @@ import { Bot, Paperclip, Send, User } from 'lucide-react';
 import { useApp } from './app-provider';
 import type { ChatMessage } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import placeholderImages from '@/lib/placeholder-images.json';
 import OpenAI from 'openai';
 import { mockWorkflow } from '@/lib/data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
 
-
-const userAvatar = placeholderImages.placeholderImages.find(p => p.id === 'user-avatar');
-const assistantAvatar = placeholderImages.placeholderImages.find(p => p.id === 'assistant-avatar');
 
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -102,7 +98,7 @@ INTELLIGENCE REQUIREMENTS:
 - If they haven't selected a LOB, guide them to choose from available data
 - Be dynamic and context-aware, not generic
 
-CRITICAL INSTRUCTION: At the end of EVERY response, you MUST guide the user on what to do next. Provide a section like "**What's next?**" with 2-3 brief, actionable suggestions as bullet points. These suggestions MUST be phrased as direct commands or order statements. For example, use "Start a 30-day forecast" or "Analyze data quality report" instead of asking a question. This is mandatory.
+CRITICAL INSTRUCTION: At the end of EVERY response, you MUST guide the user on what to do next. Provide a section like "**What's next?**" with 2-3 brief, actionable suggestions as bullet points. These suggestions MUST be phrased as commands from the user to you, the bot. For example, use "Start a 30-day forecast" or "Analyze the data quality report". Do NOT phrase them as questions or suggestions for the user to say. The button text will be the user's next command. This is mandatory.
 
 CRITICAL: Users DO NOT need to upload data for existing LOBs - they have mock data ready to use. If a LOB has no data, they should be prompted to upload it.
 
@@ -118,7 +114,6 @@ function ChatBubble({ message, onSuggestionClick }: { message: ChatMessage, onSu
     <div className={cn('flex items-start gap-3 w-full', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
         <Avatar className="h-8 w-8">
-          {assistantAvatar && <AvatarImage src={assistantAvatar.imageUrl} alt="Assistant" data-ai-hint={assistantAvatar.imageHint} />}
           <AvatarFallback><Bot /></AvatarFallback>
         </Avatar>
       )}
@@ -154,7 +149,6 @@ function ChatBubble({ message, onSuggestionClick }: { message: ChatMessage, onSu
       </div>
       {isUser && (
         <Avatar className="h-8 w-8">
-          {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User" data-ai-hint={userAvatar.imageHint} />}
           <AvatarFallback><User /></AvatarFallback>
         </Avatar>
       )}
@@ -330,3 +324,5 @@ export default function ChatPanel({ className }: { className?: string }) {
     </>
   );
 }
+
+    
