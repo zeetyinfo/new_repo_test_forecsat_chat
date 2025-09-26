@@ -112,33 +112,44 @@ Your responses should be intelligent, specific to their data, and action-oriente
 
 const chatHandler = new IntelligentChatHandler();
 
-function ChatBubble({ message }: { message: ChatMessage }) {
+function ChatBubble({ message, onSuggestionClick }: { message: ChatMessage, onSuggestionClick: (suggestion: string) => void }) {
   const isUser = message.role === 'user';
   return (
-    <div className={cn('flex items-start gap-3', isUser ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex items-start gap-3 w-full', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
         <Avatar className="h-8 w-8">
           {assistantAvatar && <AvatarImage src={assistantAvatar.imageUrl} alt="Assistant" data-ai-hint={assistantAvatar.imageHint} />}
           <AvatarFallback><Bot /></AvatarFallback>
         </Avatar>
       )}
-      <div
-        className={cn(
-          'max-w-prose rounded-lg p-3 text-sm prose prose-sm prose-p:my-2 first:prose-p:mt-0 last:prose-p:mb-0 prose-headings:my-2',
-          isUser
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted',
-          'prose-strong:text-current'
-        )}
-      >
-        {message.isTyping ? (
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-current" style={{ animationDelay: '0s' }} />
-            <span className="h-2 w-2 animate-pulse rounded-full bg-current" style={{ animationDelay: '0.2s' }} />
-            <span className="h-2 w-2 animate-pulse rounded-full bg-current" style={{ animationDelay: '0.4s' }} />
-          </div>
-        ) : (
-          <div dangerouslySetInnerHTML={{ __html: message.content.replace(/\[START_WORKFLOW\]/g, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />
+      <div className={cn("max-w-prose", isUser ? "order-1" : "")}>
+        <div
+            className={cn(
+            'max-w-prose rounded-lg p-3 text-sm prose prose-sm prose-p:my-2 first:prose-p:mt-0 last:prose-p:mb-0 prose-headings:my-2',
+            isUser
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted',
+            'prose-strong:text-current'
+            )}
+        >
+            {message.isTyping ? (
+            <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-current" style={{ animationDelay: '0s' }} />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-current" style={{ animationDelay: '0.2s' }} />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-current" style={{ animationDelay: '0.4s' }} />
+            </div>
+            ) : (
+            <div dangerouslySetInnerHTML={{ __html: message.content.replace(/\[START_WORKFLOW\]/g, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />
+            )}
+        </div>
+        {message.suggestions && message.suggestions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+                {message.suggestions.map((suggestion, index) => (
+                    <Button key={index} size="sm" variant="outline" onClick={() => onSuggestionClick(suggestion)}>
+                        {suggestion}
+                    </Button>
+                ))}
+            </div>
         )}
       </div>
       {isUser && (
@@ -195,57 +206,76 @@ export default function ChatPanel({ className }: { className?: string }) {
     }
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const userInput = formData.get('message') as string;
+    const submitMessage = async (messageText: string) => {
+        if (!messageText.trim()) return;
 
-    if (!userInput.trim()) return;
+        const userMessage: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'user',
+            content: messageText,
+        };
+        dispatch({ type: 'ADD_MESSAGE', payload: userMessage });
 
-    e.currentTarget.reset();
+        const typingMessage: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: '',
+            isTyping: true,
+        };
+        dispatch({ type: 'ADD_MESSAGE', payload: typingMessage });
 
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: userInput,
-    };
-    dispatch({ type: 'ADD_MESSAGE', payload: userMessage });
-    
-    const typingMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: '',
-        isTyping: true,
-    }
-    dispatch({ type: 'ADD_MESSAGE', payload: typingMessage });
+        try {
+            const responseText = await chatHandler.generateResponse(messageText, {
+                selectedBu: state.selectedBu,
+                selectedLob: state.selectedLob,
+                businessUnits: state.businessUnits,
+            });
 
+            if (responseText.includes('[START_WORKFLOW]')) {
+                dispatch({ type: 'SET_WORKFLOW', payload: mockWorkflow });
+            }
 
-    try {
-        const responseText = await chatHandler.generateResponse(userInput, {
-            selectedBu: state.selectedBu,
-            selectedLob: state.selectedLob,
-            businessUnits: state.businessUnits,
-        });
+            const suggestionRegex = /\*\*What's next\?\*\*([\s\S]*)/;
+            const match = responseText.match(suggestionRegex);
+            let content = responseText;
+            let suggestions: string[] = [];
 
-        if (responseText.includes('[START_WORKFLOW]')) {
-            dispatch({ type: 'SET_WORKFLOW', payload: mockWorkflow });
+            if (match && match[1]) {
+                content = responseText.replace(suggestionRegex, '').trim();
+                suggestions = match[1]
+                    .split(/[\n•-]/)
+                    .map(s => s.trim().replace(/^"|"$/g, '')) // trim and remove quotes
+                    .filter(s => s.length > 0);
+            }
+
+            const assistantMessage: Partial<ChatMessage> = {
+                content: content,
+                suggestions: suggestions,
+                isTyping: false,
+            };
+            dispatch({ type: 'UPDATE_LAST_MESSAGE', payload: assistantMessage });
+
+        } catch (error) {
+            console.error("Error calling AI:", error);
+            const errorMessage: Partial<ChatMessage> = {
+                content: "Sorry, I'm having trouble connecting to my brain right now. Please try again later.",
+                isTyping: false
+            };
+            dispatch({ type: 'UPDATE_LAST_MESSAGE', payload: errorMessage });
         }
+    };
 
-        const assistantMessage: Partial<ChatMessage> = {
-            content: responseText,
-            isTyping: false,
-        };
-        dispatch({ type: 'UPDATE_LAST_MESSAGE', payload: assistantMessage });
+    const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const userInput = formData.get('message') as string;
+        e.currentTarget.reset();
+        submitMessage(userInput);
+    };
 
-    } catch (error) {
-        console.error("Error calling AI:", error);
-        const errorMessage: Partial<ChatMessage> = {
-            content: "Sorry, I'm having trouble connecting to my brain right now. Please try again later.",
-            isTyping: false
-        };
-        dispatch({ type: 'UPDATE_LAST_MESSAGE', payload: errorMessage });
-    }
-  };
+    const handleSuggestionClick = (suggestion: string) => {
+        submitMessage(suggestion);
+    };
 
   return (
     <>
@@ -255,12 +285,12 @@ export default function ChatPanel({ className }: { className?: string }) {
           <ScrollArea className="flex-1" ref={scrollAreaRef}>
             <div className="p-4 space-y-4">
                 {state.messages.map(message => (
-                    <ChatBubble key={message.id} message={message} />
+                    <ChatBubble key={message.id} message={message} onSuggestionClick={handleSuggestionClick} />
                 ))}
             </div>
           </ScrollArea>
           <div className="border-t p-4 bg-card">
-            <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            <form onSubmit={handleFormSubmit} className="flex items-center gap-2">
               <Button variant="ghost" size="icon" type="button" onClick={() => fileInputRef.current?.click()}>
                 <Paperclip className="h-5 w-5" />
               </Button>

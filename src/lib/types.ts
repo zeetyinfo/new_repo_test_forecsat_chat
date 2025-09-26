@@ -59,6 +59,7 @@ export type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
   isTyping?: boolean;
+  suggestions?: string[];
 };
 
 export type WorkflowStatus = 'completed' | 'active' | 'pending' | 'error';
