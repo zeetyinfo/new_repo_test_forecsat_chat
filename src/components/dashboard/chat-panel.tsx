@@ -102,7 +102,7 @@ INTELLIGENCE REQUIREMENTS:
 - If they haven't selected a LOB, guide them to choose from available data
 - Be dynamic and context-aware, not generic
 
-CRITICAL INSTRUCTION: At the end of EVERY response, you MUST guide the user on what to do next. Provide a section like "**What's next?**" with 2-3 brief, actionable suggestions as bullet points. These suggestions should be phrased as if they are the USER's next request. For example, instead of "Start a forecast," the suggestion should be "Can you start a forecast for me?" or "Show me the data quality report." This is mandatory.
+CRITICAL INSTRUCTION: At the end of EVERY response, you MUST guide the user on what to do next. Provide a section like "**What's next?**" with 2-3 brief, actionable suggestions as bullet points. These suggestions MUST be phrased as direct commands or order statements. For example, use "Start a 30-day forecast" or "Analyze data quality report" instead of asking a question. This is mandatory.
 
 CRITICAL: Users DO NOT need to upload data for existing LOBs - they have mock data ready to use. If a LOB has no data, they should be prompted to upload it.
 
