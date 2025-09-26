@@ -156,7 +156,6 @@ export default function ChatPanel({ className }: { className?: string }) {
   const { state, dispatch } = useApp();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isAgentMonitorOpen, setAgentMonitorOpen] = useState(false);
   
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -281,12 +280,12 @@ export default function ChatPanel({ className }: { className?: string }) {
         </div>
       </CardContent>
     </Card>
-    <Dialog open={isAgentMonitorOpen} onOpenChange={setAgentMonitorOpen}>
-        <DialogContent className="max-w-4xl h-[80vh]">
+    <Dialog open={state.agentMonitor.isOpen} onOpenChange={(isOpen) => dispatch({ type: 'SET_AGENT_MONITOR_OPEN', payload: isOpen })}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Agent Activity Monitor</DialogTitle>
           </DialogHeader>
-          <AgentMonitorPanel className="h-full" />
+          <AgentMonitorPanel className="flex-1 min-h-0" />
         </DialogContent>
       </Dialog>
     </>

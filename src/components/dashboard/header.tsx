@@ -11,11 +11,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings, User, Bot, BarChart } from 'lucide-react';
+import { Settings, User, Bot, BarChart, Sun, Moon } from 'lucide-react';
 import placeholderImages from '@/lib/placeholder-images.json';
 import { useApp } from './app-provider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
+
+const ThemeToggle = () => {
+    const [theme, setTheme] = React.useState('light');
+
+    React.useEffect(() => {
+        const isDark = document.documentElement.classList.contains('dark');
+        setTheme(isDark ? 'dark' : 'light');
+    }, []);
+
+    const toggleTheme = () => {
+        if (theme === 'light') {
+            document.documentElement.classList.add('dark');
+            setTheme('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            setTheme('light');
+        }
+    };
+
+    return (
+        <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg bg-white/10 hover:bg-white/20"
+            title="Toggle Theme"
+        >
+            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+        </button>
+    );
+};
+
 
 const SettingsDropdown = () => {
     const { state, dispatch } = useApp();
@@ -54,11 +84,11 @@ const SettingsDropdown = () => {
                 </DropdownMenuContent>
             </DropdownMenu>
             <Dialog open={state.agentMonitor.isOpen} onOpenChange={(isOpen) => dispatch({ type: 'SET_AGENT_MONITOR_OPEN', payload: isOpen })}>
-                <DialogContent className="max-w-4xl h-[80vh]">
+                <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>Agent Activity Monitor</DialogTitle>
                     </DialogHeader>
-                    <AgentMonitorPanel className="h-full" />
+                    <AgentMonitorPanel className="flex-1 min-h-0" />
                 </DialogContent>
             </Dialog>
         </>
@@ -81,6 +111,7 @@ export default function Header() {
         </div>
         
         <div className="flex items-center space-x-4">
+             <ThemeToggle />
             <button 
                 onClick={showAgentMonitor}
                 className="p-2 rounded-lg bg-white/10 hover:bg-white/20"
