@@ -244,7 +244,12 @@ export default function WorkflowTree({ className }: { className?: string }) {
   }, []);
 
   useEffect(() => {
-    if (!state.isProcessing || workflow.every(s => s.status === 'completed')) return;
+    if (!state.isProcessing || workflow.every(s => s.status === 'completed')) {
+        if (state.isProcessing) {
+            dispatch({ type: 'SET_PROCESSING', payload: false });
+        }
+        return;
+    };
   
     const interval = setInterval(() => {
       const activeIndex = workflow.findIndex(step => step.status === 'active');
@@ -256,9 +261,6 @@ export default function WorkflowTree({ className }: { className?: string }) {
       } else if (pendingIndex !== -1) {
         // Start the next pending step
         dispatch({ type: 'UPDATE_WORKFLOW_STEP', payload: { id: workflow[pendingIndex].id, status: 'active' } });
-      } else {
-        // All steps are completed
-        dispatch({ type: 'SET_PROCESSING', payload: false });
       }
     }, 2500);
   
@@ -284,6 +286,7 @@ export default function WorkflowTree({ className }: { className?: string }) {
   };
 
   const handleLobSelect = (lob: LineOfBusiness) => {
+    dispatch({ type: 'RESET_WORKFLOW' });
     if (!lob.hasData) {
       dispatch({
         type: 'ADD_MESSAGE',
@@ -293,17 +296,17 @@ export default function WorkflowTree({ className }: { className?: string }) {
           content: `No data is available for **${lob.name}**. Please upload data to begin analysis.`
         }
       });
+    } else {
+        dispatch({
+            type: 'ADD_MESSAGE',
+            payload: {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `Great! For **${lob.name}**, I have ${lob.recordCount} records ready. What would you like to do?`
+            }
+        })
     }
-
     dispatch({ type: 'SET_SELECTED_LOB', payload: lob });
-    dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: `Great! For **${lob.name}**, I have ${lob.recordCount} records ready. What would you like to do?`
-        }
-    })
   };
 
   const openAddLobModal = (buId: string) => {
@@ -317,11 +320,11 @@ export default function WorkflowTree({ className }: { className?: string }) {
         <Accordion type="multiple" className="w-full" defaultValue={businessUnits.map(bu => bu.id)}>
             {businessUnits.map((bu) => (
             <AccordionItem value={bu.id} key={bu.id}>
-                <div 
-                    className={cn("flex items-center px-4 py-2 hover:bg-muted/50 group", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}
+                 <div 
+                    className={cn("flex items-center px-4 hover:bg-muted/50 group", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}
                 >
                     <AccordionTrigger 
-                        className="flex-1 text-left p-0 hover:no-underline"
+                        className="flex-1 text-left py-2 hover:no-underline"
                         onClick={() => handleBuSelect(bu)}
                     >
                         <div className="flex items-center gap-3 flex-1">
@@ -423,5 +426,3 @@ export default function WorkflowTree({ className }: { className?: string }) {
     </Card>
   );
 }
-
-      

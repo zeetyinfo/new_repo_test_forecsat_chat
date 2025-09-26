@@ -61,9 +61,9 @@ const getRandomColor = () => {
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'SET_SELECTED_BU':
-      return { ...state, selectedBu: action.payload };
+      return { ...state, selectedBu: action.payload, workflow: [], isProcessing: false };
     case 'SET_SELECTED_LOB':
-      return { ...state, selectedLob: action.payload };
+      return { ...state, selectedLob: action.payload, workflow: [], isProcessing: false };
     case 'ADD_MESSAGE':
       // Remove typing indicator before adding new message
       const messages = state.messages.filter(m => !m.isTyping);
@@ -78,11 +78,14 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_PROCESSING':
       return { ...state, isProcessing: action.payload };
     case 'UPDATE_WORKFLOW_STEP':
+        const newWorkflow = state.workflow.map(step =>
+            step.id === action.payload.id ? { ...step, ...action.payload } : step
+          );
+        const isStillProcessing = newWorkflow.some(step => step.status === 'active' || step.status === 'pending');
       return {
         ...state,
-        workflow: state.workflow.map(step =>
-          step.id === action.payload.id ? { ...step, ...action.payload } : step
-        ),
+        workflow: newWorkflow,
+        isProcessing: isStillProcessing,
       };
     case 'SET_WORKFLOW':
       return { ...state, workflow: action.payload, isProcessing: true };
