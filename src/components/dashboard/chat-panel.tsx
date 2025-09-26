@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { FormEvent, useEffect, useRef, useState } from 'react';
@@ -222,7 +223,7 @@ export default function ChatPanel({ className }: { className?: string }) {
   };
 
   return (
-    <Card className={`flex flex-col ${className} border-0 shadow-none rounded-none`}>
+    <Card className={cn('flex flex-col h-full border-0 shadow-none rounded-none', className)}>
       <CardContent className="flex-1 p-0 overflow-hidden">
         <div className="flex flex-col h-full">
           <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
