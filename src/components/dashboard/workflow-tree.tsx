@@ -78,32 +78,25 @@ const LobItem = ({ lob, onSelect, isSelected }: { lob: LineOfBusiness, onSelect:
         <div className="flex items-center justify-between w-full">
           <span>{lob.name}</span>
           <div className="flex items-center space-x-2">
-            {!lob.hasData && (
-              <TooltipProvider>
+             <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger>
-                    <FileWarning className="h-4 w-4 text-amber-500" />
+                  <TooltipTrigger asChild>
+                    <div>
+                      {!lob.hasData && (
+                          <FileWarning className="h-4 w-4 text-amber-500" />
+                      )}
+                      {lob.hasData && (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                      )}
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>No data available for this LOB.</p>
+                    <p>{lob.hasData ? 'Data ready for analysis' : 'No data available for this LOB.'}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            )}
             {lob.recordCount > 0 && (
               <span className="text-xs text-muted-foreground">{lob.recordCount} records</span>
-            )}
-            {lob.hasData && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Data ready for analysis</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
             )}
           </div>
         </div>
@@ -202,9 +195,49 @@ export default function WorkflowTree({ className }: { className?: string }) {
     })
   };
 
+  const renderContent = () => (
+    <CardContent className="p-0">
+        <ScrollArea className="h-full">
+        <Accordion type="single" collapsible className="w-full" defaultValue={selectedBu?.id}>
+            {businessUnits.map((bu) => (
+            <AccordionItem value={bu.id} key={bu.id}>
+                <AccordionTrigger 
+                className={cn("px-4 py-3 hover:no-underline hover:bg-muted/50 text-left", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}
+                onClick={() => handleBuSelect(bu)}
+                >
+                <div className="flex items-center gap-3">
+                    <Folder className="h-4 w-4" style={{ color: bu.color }} />
+                    <span className="font-medium">{bu.name}</span>
+                </div>
+                </AccordionTrigger>
+                <AccordionContent className="pl-8 pr-4 pt-0 pb-2 space-y-1">
+                {bu.lobs.map((lob) => (
+                    <LobItem
+                    key={lob.id}
+                    lob={lob}
+                    onSelect={handleLobSelect}
+                    isSelected={selectedLob?.id === lob.id}
+                    />
+                ))}
+                </AccordionContent>
+            </AccordionItem>
+            ))}
+        </Accordion>
+        <div className='p-4'>
+            <h3 className="text-sm font-semibold text-muted-foreground px-1 mb-4 mt-2">CURRENT PLAN</h3>
+            <ol className='relative'>
+            {workflow.filter(step => step.id !== 'step-4-alt').map((step) => (
+                <WorkflowNode key={step.id} step={step} />
+            ))}
+            </ol>
+        </div>
+        </ScrollArea>
+    </CardContent>
+  );
+
   if (isMobile) {
     return (
-      <div className={className}>
+      <div className={cn("md:hidden", className)}>
         <Accordion type="single" collapsible className="w-full" defaultValue={isOpen ? "workflow" : ""}>
           <AccordionItem value="workflow">
             <AccordionTrigger onClick={() => setIsOpen(!isOpen)} className="bg-card p-4 border-b">
@@ -214,43 +247,7 @@ export default function WorkflowTree({ className }: { className?: string }) {
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <CardContent className="p-0">
-                <ScrollArea className="h-full">
-                  <Accordion type="single" collapsible className="w-full" defaultValue={selectedBu?.id}>
-                    {businessUnits.map((bu) => (
-                      <AccordionItem value={bu.id} key={bu.id}>
-                        <AccordionTrigger 
-                          className={cn("px-4 py-3 hover:no-underline hover:bg-muted/50 text-left", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}
-                          onClick={() => handleBuSelect(bu)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Folder className="h-4 w-4" style={{ color: bu.color }} />
-                            <span className="font-medium">{bu.name}</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pl-8 pr-4 pt-0 pb-2 space-y-1">
-                          {bu.lobs.map((lob) => (
-                            <LobItem
-                              key={lob.id}
-                              lob={lob}
-                              onSelect={handleLobSelect}
-                              isSelected={selectedLob?.id === lob.id}
-                            />
-                          ))}
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                  <div className='p-4'>
-                    <h3 className="text-sm font-semibold text-muted-foreground px-1 mb-4 mt-2">CURRENT PLAN</h3>
-                    <ol className='relative'>
-                      {workflow.filter(step => step.id !== 'step-4-alt').map((step) => (
-                        <WorkflowNode key={step.id} step={step} />
-                      ))}
-                    </ol>
-                  </div>
-                </ScrollArea>
-              </CardContent>
+              {renderContent()}
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -264,43 +261,7 @@ export default function WorkflowTree({ className }: { className?: string }) {
         <GitBranch className="h-6 w-6" />
         <CardTitle className="text-lg">Workflow & Data</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 p-0 overflow-hidden">
-        <ScrollArea className="h-full">
-          <Accordion type="single" collapsible className="w-full" defaultValue={selectedBu?.id}>
-            {businessUnits.map((bu) => (
-              <AccordionItem value={bu.id} key={bu.id}>
-                <AccordionTrigger 
-                  className={cn("px-4 py-3 hover:no-underline hover:bg-muted/50 text-left", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}
-                  onClick={() => handleBuSelect(bu)}
-                >
-                  <div className="flex items-center gap-3">
-                    <Folder className="h-4 w-4" style={{ color: bu.color }} />
-                    <span className="font-medium">{bu.name}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pl-8 pr-4 pt-0 pb-2 space-y-1">
-                  {bu.lobs.map((lob) => (
-                    <LobItem
-                      key={lob.id}
-                      lob={lob}
-                      onSelect={handleLobSelect}
-                      isSelected={selectedLob?.id === lob.id}
-                    />
-                  ))}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-          <div className='p-4'>
-            <h3 className="text-sm font-semibold text-muted-foreground px-1 mb-4 mt-2">CURRENT PLAN</h3>
-            <ol className='relative'>
-              {workflow.filter(step => step.id !== 'step-4-alt').map((step) => (
-                <WorkflowNode key={step.id} step={step} />
-              ))}
-            </ol>
-          </div>
-        </ScrollArea>
-      </CardContent>
+      {renderContent()}
     </Card>
   );
 }
