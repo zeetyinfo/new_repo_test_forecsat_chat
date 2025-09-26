@@ -21,6 +21,7 @@ export type LineOfBusiness = {
   recordCount: number;
   mockData?: WeeklyData[];
   dataQuality?: DataQuality;
+  file?: File;
 };
 
 export type BusinessUnit = {
@@ -69,6 +70,7 @@ export type WorkflowStep = {
   dependencies: string[];
   estimatedTime: string; // e.g., "2m 15s"
   details: string;
+  agent?: string;
 };
 
 export type AgentMonitorProps = {

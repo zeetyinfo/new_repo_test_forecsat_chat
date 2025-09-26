@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useReducer } from 'react';
@@ -22,8 +23,12 @@ type Action =
   | { type: 'UPDATE_LAST_MESSAGE'; payload: Partial<ChatMessage> }
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'UPDATE_WORKFLOW_STEP'; payload: Partial<WorkflowStep> & { id: string } }
+  | { type: 'SET_WORKFLOW'; payload: WorkflowStep[] }
   | { type: 'RESET_WORKFLOW' }
-  | { type: 'SET_AGENT_MONITOR_OPEN'; payload: boolean };
+  | { type: 'SET_AGENT_MONITOR_OPEN'; payload: boolean }
+  | { type: 'ADD_BU'; payload: { name: string; description: string } }
+  | { type: 'ADD_LOB'; payload: { buId: string; name: string; description: string } }
+  | { type: 'UPLOAD_DATA', payload: { lobId: string, file: File } };
 
 
 const initialState: AppState = {
@@ -37,17 +42,26 @@ const initialState: AppState = {
       content: "Hello! I'm your BI forecasting assistant. I see you have Premium Order Services selected. What would you like to do?",
     },
   ],
-  workflow: mockWorkflow,
+  workflow: [],
   isProcessing: false,
   agentMonitor: {
     isOpen: false,
   },
 };
 
+const getRandomColor = () => {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+};
+
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'SET_SELECTED_BU':
-      return { ...state, selectedBu: action.payload, selectedLob: null };
+      return { ...state, selectedBu: action.payload };
     case 'SET_SELECTED_LOB':
       return { ...state, selectedLob: action.payload };
     case 'ADD_MESSAGE':
@@ -70,10 +84,67 @@ function appReducer(state: AppState, action: Action): AppState {
           step.id === action.payload.id ? { ...step, ...action.payload } : step
         ),
       };
+    case 'SET_WORKFLOW':
+      return { ...state, workflow: action.payload, isProcessing: true };
     case 'RESET_WORKFLOW':
-        return { ...state, workflow: mockWorkflow };
+        return { ...state, workflow: [], isProcessing: false };
     case 'SET_AGENT_MONITOR_OPEN':
         return { ...state, agentMonitor: { ...state.agentMonitor, isOpen: action.payload } };
+    case 'ADD_BU': {
+        const newBu: BusinessUnit = {
+            id: `bu-${crypto.randomUUID()}`,
+            name: action.payload.name,
+            description: action.payload.description,
+            color: getRandomColor(),
+            lobs: [],
+        };
+        return { ...state, businessUnits: [...state.businessUnits, newBu] };
+    }
+    case 'ADD_LOB': {
+        const newLob: LineOfBusiness = {
+            id: `lob-${crypto.randomUUID()}`,
+            name: action.payload.name,
+            description: action.payload.description,
+            hasData: false,
+            dataUploaded: null,
+            recordCount: 0,
+        };
+        return {
+            ...state,
+            businessUnits: state.businessUnits.map(bu =>
+                bu.id === action.payload.buId
+                    ? { ...bu, lobs: [...bu.lobs, newLob] }
+                    : bu
+            ),
+        };
+    }
+    case 'UPLOAD_DATA': {
+      // Here you would process the file. For now, we'll just simulate it.
+      const recordCount = Math.floor(Math.random() * 5000) + 500; // Simulate records
+      return {
+        ...state,
+        businessUnits: state.businessUnits.map(bu => ({
+          ...bu,
+          lobs: bu.lobs.map(lob =>
+            lob.id === action.payload.lobId
+              ? {
+                ...lob,
+                hasData: true,
+                file: action.payload.file,
+                recordCount: recordCount,
+                dataUploaded: new Date(),
+                dataQuality: {
+                  completeness: 99,
+                  outliers: Math.floor(Math.random() * 10),
+                  seasonality: 'unknown',
+                  trend: 'unknown'
+                }
+              }
+              : lob
+          )
+        }))
+      };
+    }
     default:
       return state;
   }

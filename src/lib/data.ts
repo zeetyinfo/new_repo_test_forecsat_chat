@@ -1,3 +1,4 @@
+
 import type { BusinessUnit, Agent, AgentCommunication, WorkflowStep, WeeklyData } from './types';
 
 // Mock Data Generator
@@ -245,6 +246,7 @@ export const mockWorkflow: WorkflowStep[] = [
         dependencies: [],
         estimatedTime: '15s',
         details: 'Upload and validate CSV/Excel data for the selected Line of Business.',
+        agent: 'Orchestrator Agent',
     },
     {
         id: 'step-2',
@@ -253,6 +255,7 @@ export const mockWorkflow: WorkflowStep[] = [
         dependencies: ['step-1'],
         estimatedTime: '45s',
         details: 'Perform exploratory data analysis to identify trends, seasonality, and anomalies.',
+        agent: 'Data Analysis Agent',
     },
     {
         id: 'step-3',
@@ -261,6 +264,7 @@ export const mockWorkflow: WorkflowStep[] = [
         dependencies: ['step-2'],
         estimatedTime: '30s',
         details: 'Clean data, handle missing values, and create features for modeling.',
+        agent: 'Preprocessing Agent',
     },
     {
         id: 'step-4',
@@ -269,14 +273,7 @@ export const mockWorkflow: WorkflowStep[] = [
         dependencies: ['step-3'],
         estimatedTime: '2m 30s',
         details: 'Train multiple forecasting models (e.g., ARIMA, XGBoost) in parallel.',
-    },
-    {
-        id: 'step-4-alt',
-        name: 'Fallback Model Training',
-        status: 'pending',
-        dependencies: ['step-3'],
-        estimatedTime: '2m 10s',
-        details: 'Train LightGBM as a fallback if primary models fail.',
+        agent: 'Modeling Agent',
     },
     {
         id: 'step-5',
@@ -285,6 +282,7 @@ export const mockWorkflow: WorkflowStep[] = [
         dependencies: ['step-4'],
         estimatedTime: '25s',
         details: 'Evaluate models based on accuracy metrics (MAPE, RMSE) and select the best performer.',
+        agent: 'Evaluation Agent',
     },
     {
         id: 'step-6',
@@ -293,6 +291,7 @@ export const mockWorkflow: WorkflowStep[] = [
         dependencies: ['step-5'],
         estimatedTime: '20s',
         details: 'Generate future forecasts using the best-performing model.',
+        agent: 'Forecasting Agent',
     },
     {
         id: 'step-7',
@@ -301,5 +300,6 @@ export const mockWorkflow: WorkflowStep[] = [
         dependencies: ['step-6'],
         estimatedTime: '10s',
         details: 'Create interactive charts and tables to display the forecast results.',
+        agent: 'Orchestrator Agent',
     },
 ];
