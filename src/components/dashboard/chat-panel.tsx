@@ -277,6 +277,9 @@ export default function ChatPanel({ className }: { className?: string }) {
         submitMessage(suggestion);
     };
 
+    const isAssistantTyping = state.isProcessing || state.messages[state.messages.length - 1]?.isTyping;
+
+
   return (
     <>
     <Card className={cn('flex flex-col h-full border-0 shadow-none rounded-none', className)}>
@@ -287,6 +290,12 @@ export default function ChatPanel({ className }: { className?: string }) {
                 {state.messages.map(message => (
                     <ChatBubble key={message.id} message={message} onSuggestionClick={handleSuggestionClick} />
                 ))}
+                 {isAssistantTyping && !state.messages.some(m => m.isTyping) && (
+                    <ChatBubble 
+                        message={{ id: 'typing-indicator', role: 'assistant', content: '', isTyping: true }} 
+                        onSuggestionClick={() => {}} 
+                    />
+                )}
             </div>
           </ScrollArea>
           <div className="border-t p-4 bg-card">

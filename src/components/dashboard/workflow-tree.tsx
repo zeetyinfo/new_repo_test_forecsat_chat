@@ -31,7 +31,7 @@ function WorkflowNode({ step }: { step: WorkflowStep }) {
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <div className={cn("rounded-full h-10 w-10 flex items-center justify-center bg-muted", config.color)}>
+                    <div className={cn("rounded-full h-10 w-10 flex items-center justify-center bg-muted", config.color, step.status === 'active' && 'animate-pulse ring-4 ring-blue-500/50')}>
                         {React.cloneElement(config.icon as React.ReactElement, { className: "h-6 w-6 text-white"})}
                     </div>
                 </TooltipTrigger>
@@ -252,16 +252,32 @@ export default function WorkflowTree({ className }: { className?: string }) {
     };
   
     const interval = setInterval(() => {
-      const activeIndex = workflow.findIndex(step => step.status === 'active');
-      const pendingIndex = workflow.findIndex(step => step.status === 'pending');
-  
-      if (activeIndex !== -1) {
-        // Complete the active step
-        dispatch({ type: 'UPDATE_WORKFLOW_STEP', payload: { id: workflow[activeIndex].id, status: 'completed' } });
-      } else if (pendingIndex !== -1) {
-        // Start the next pending step
-        dispatch({ type: 'UPDATE_WORKFLOW_STEP', payload: { id: workflow[pendingIndex].id, status: 'active' } });
-      }
+        const currentIndex = workflow.findIndex(step => step.status === 'active');
+        
+        if (currentIndex !== -1) {
+            // Complete the current step
+            dispatch({ 
+                type: 'UPDATE_WORKFLOW_STEP', 
+                payload: { id: workflow[currentIndex].id, status: 'completed' } 
+            });
+            
+            // Activate the next step if it exists
+            if (currentIndex + 1 < workflow.length) {
+                dispatch({ 
+                    type: 'UPDATE_WORKFLOW_STEP', 
+                    payload: { id: workflow[currentIndex + 1].id, status: 'active' } 
+                });
+            }
+        } else {
+             // If no step is active, find the first pending one and activate it
+            const firstPendingIndex = workflow.findIndex(step => step.status === 'pending');
+            if (firstPendingIndex !== -1) {
+                 dispatch({ 
+                    type: 'UPDATE_WORKFLOW_STEP', 
+                    payload: { id: workflow[firstPendingIndex].id, status: 'active' } 
+                });
+            }
+        }
     }, 2500);
   
     return () => clearInterval(interval);
@@ -373,10 +389,13 @@ export default function WorkflowTree({ className }: { className?: string }) {
                 <GitMerge className="h-4 w-4" />
                 CURRENT WORKFLOW
             </h3>
-            {state.isProcessing && workflow.length > 0 ? (
+            {workflow.length > 0 ? (
                 <ol className='relative'>
-                    {workflow.map((step) => (
-                        <WorkflowNode key={step.id} step={step} />
+                    {workflow.map((step, index) => (
+                       <React.Fragment key={step.id}>
+                            <WorkflowNode step={step} />
+                            {index < workflow.length -1 && <div className="w-px h-4 bg-border ml-5" />}
+                        </React.Fragment>
                     ))}
                 </ol>
             ) : (
