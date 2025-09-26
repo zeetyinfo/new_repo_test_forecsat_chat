@@ -4,7 +4,7 @@ import { useApp } from './app-provider';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Briefcase, PlusCircle, Folder, FileText } from 'lucide-react';
+import { Building, PlusCircle, Folder, FileText, CheckCircle, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,21 +13,9 @@ import type { BusinessUnit, LineOfBusiness } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
-export default function BuSidebar() {
+function LobItem({ lob, buColor }: { lob: LineOfBusiness; buColor: string }) {
   const { state, dispatch } = useApp();
-  const { businessUnits, selectedBu, selectedLob } = state;
-
-  const handleBuSelect = (bu: BusinessUnit) => {
-    dispatch({ type: 'SET_SELECTED_BU', payload: bu });
-    dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: `Switched to Business Unit: **${bu.name}**. Please select a Line of Business to proceed.`
-        }
-    })
-  };
+  const { selectedLob } = state;
 
   const handleLobSelect = (lob: LineOfBusiness) => {
     dispatch({ type: 'SET_SELECTED_LOB', payload: lob });
@@ -37,6 +25,63 @@ export default function BuSidebar() {
             id: crypto.randomUUID(),
             role: 'assistant',
             content: `Great! For **${lob.name}**, you can now upload data or start a forecast. What would you like to do?`
+        }
+    })
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50",
+        selectedLob?.id === lob.id && "bg-accent text-accent-foreground"
+      )}
+      onClick={() => handleLobSelect(lob)}
+    >
+      <div className="flex items-center gap-3">
+        <FileText className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm">{lob.name}</span>
+      </div>
+      {lob.hasData ? (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Data uploaded: {lob.dataUploaded?.toLocaleDateString()}</p>
+              <p>{lob.recordCount} records</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Upload className="h-4 w-4 text-amber-500" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>No data uploaded</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
+  );
+}
+
+
+export default function BuSidebar() {
+  const { state, dispatch } = useApp();
+  const { businessUnits, selectedBu } = state;
+
+  const handleBuSelect = (bu: BusinessUnit) => {
+    dispatch({ type: 'SET_SELECTED_BU', payload: bu });
+    dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `Switched to Business Unit: **${bu.name}**. Please select a Line of Business to proceed.`
         }
     })
   };
@@ -76,31 +121,22 @@ export default function BuSidebar() {
       </CardHeader>
       <CardContent className="p-0 flex-1">
         <ScrollArea className="h-full">
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="single" collapsible className="w-full" defaultValue={selectedBu?.id}>
             {businessUnits.map((bu) => (
                 <AccordionItem value={bu.id} key={bu.id}>
                 <AccordionTrigger 
                     className={cn("px-4 py-3 hover:no-underline hover:bg-muted/50", selectedBu?.id === bu.id && "bg-muted")}
                     onClick={() => handleBuSelect(bu)}
+                    style={selectedBu?.id === bu.id ? { backgroundColor: bu.color, color: 'white' } : {}}
                 >
                     <div className="flex items-center gap-3">
-                        <Folder className="h-4 w-4 text-primary" />
+                        <Folder className="h-4 w-4" style={selectedBu?.id === bu.id ? { color: 'white' } : { color: bu.color }} />
                         <span className="font-medium">{bu.name}</span>
                     </div>
                 </AccordionTrigger>
                 <AccordionContent className="pl-8 pr-2 pt-0 pb-0">
                     {bu.lobs.map((lob) => (
-                    <div
-                        key={lob.id}
-                        className={cn(
-                            "flex items-center gap-3 py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50",
-                            selectedLob?.id === lob.id && "bg-accent text-accent-foreground"
-                        )}
-                        onClick={() => handleLobSelect(lob)}
-                    >
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{lob.name}</span>
-                    </div>
+                      <LobItem key={lob.id} lob={lob} buColor={bu.color} />
                     ))}
                     <div className="flex items-center gap-3 py-3 px-2 cursor-pointer rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50">
                         <PlusCircle className="h-4 w-4" />

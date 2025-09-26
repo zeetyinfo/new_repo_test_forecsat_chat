@@ -8,13 +8,16 @@ export type LineOfBusiness = {
   id: string;
   name: string;
   description: string;
-  weeklyData: WeeklyData[];
+  hasData: boolean;
+  dataUploaded: Date | null;
+  recordCount: number;
 };
 
 export type BusinessUnit = {
   id: string;
   name: string;
   description: string;
+  color: string;
   lobs: LineOfBusiness[];
 };
 

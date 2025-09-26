@@ -1,65 +1,75 @@
-import type { BusinessUnit, Agent, AgentCommunication, WorkflowStep, WeeklyData } from './types';
-
-function generateWeeklyData(startUnits: number, startRevenue: number): WeeklyData[] {
-  const data: WeeklyData[] = [];
-  for (let i = 1; i <= 12; i++) {
-    const week = `2024-W${String(i).padStart(2, '0')}`;
-    const units = Math.floor(startUnits * (1 + (Math.random() - 0.45) * 0.2));
-    const revenue = Math.floor(startRevenue * (1 + (Math.random() - 0.4) * 0.25));
-    data.push({ week, units, revenue });
-  }
-  return data;
-}
+import type { BusinessUnit, Agent, AgentCommunication, WorkflowStep } from './types';
 
 export const mockBusinessUnits: BusinessUnit[] = [
   {
-    id: 'bu-001',
-    name: 'North America Sales',
-    description: 'Sales operations across North America',
+    id: 'bu-premium',
+    name: 'Premium Order Services',
+    description: 'High-value customer service operations with premium support',
+    color: '#8B5CF6', // Purple theme
     lobs: [
       {
-        id: 'lob-001',
-        name: 'Enterprise Software',
-        description: 'B2B software sales',
-        weeklyData: generateWeeklyData(1250, 75000),
+        id: 'lob-premium-phone',
+        name: 'Phone',
+        description: 'Premium phone support services',
+        hasData: true, // Mock data available
+        dataUploaded: new Date('2024-01-10'),
+        recordCount: 1250
       },
       {
-        id: 'lob-002',
-        name: 'Consumer Electronics',
-        description: 'Consumer device sales',
-        weeklyData: generateWeeklyData(5500, 330000),
-      },
-    ],
+        id: 'lob-premium-chat', 
+        name: 'Chat',
+        description: 'Premium chat support services',
+        hasData: true, // Mock data available
+        dataUploaded: new Date('2024-01-10'),
+        recordCount: 890
+      }
+    ]
   },
   {
-    id: 'bu-002',
-    name: 'European Operations',
-    description: 'All European business operations',
+    id: 'bu-mass',
+    name: 'Mass Order Services',
+    description: 'High-volume customer service operations',
+    color: '#10B981', // Green theme
     lobs: [
       {
-        id: 'lob-003',
-        name: 'Automotive Parts',
-        description: 'Car parts and accessories',
-        weeklyData: generateWeeklyData(15000, 450000),
+        id: 'lob-mass-phone',
+        name: 'Phone',
+        description: 'Mass market phone support',
+        hasData: true,
+        dataUploaded: new Date('2024-01-08'),
+        recordCount: 3450
       },
       {
-        id: 'lob-004',
-        name: 'Luxury Goods',
-        description: 'High-end consumer products',
-        weeklyData: generateWeeklyData(800, 1200000),
-      },
-    ],
+        id: 'lob-mass-chat',
+        name: 'Chat', 
+        description: 'Mass market chat support',
+        hasData: true,
+        dataUploaded: new Date('2024-01-08'),
+        recordCount: 2100
+      }
+    ]
   },
   {
-    id: 'bu-003',
-    name: 'APAC Logistics',
-    description: 'Supply chain and logistics in Asia-Pacific',
+    id: 'bu-ecom',
+    name: 'ECOM',
+    description: 'E-commerce platform services and support',
+    color: '#F59E0B', // Amber theme
     lobs: [
-       {
-        id: 'lob-005',
-        name: 'Maritime Shipping',
-        description: 'Container shipping and freight',
-        weeklyData: generateWeeklyData(25000, 2500000),
+      {
+        id: 'lob-ecom-phone',
+        name: 'Phone',
+        description: 'E-commerce phone support',
+        hasData: false, // No data yet - user needs to upload
+        dataUploaded: null,
+        recordCount: 0
+      },
+      {
+        id: 'lob-ecom-chat',
+        name: 'Chat',
+        description: 'E-commerce chat support', 
+        hasData: false, // No data yet - user needs to upload
+        dataUploaded: null,
+        recordCount: 0
       }
     ]
   }
