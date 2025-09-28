@@ -14,12 +14,13 @@ import {
   DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Folder, PlusCircle, UploadCloud, CheckCircle, FileWarning, Plug } from 'lucide-react';
+import { ChevronDown, Folder, PlusCircle, UploadCloud, CheckCircle, FileWarning, Plug, Check } from 'lucide-react';
 import { useApp } from './app-provider';
 import type { BusinessUnit, LineOfBusiness } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { cn } from '@/lib/utils';
 
 function AddBuDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (isOpen: boolean) => void }) {
     const [name, setName] = useState('');
@@ -181,17 +182,41 @@ export default function BuLobSelector({
         <>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant={variant as any} size={size as any} className={className ?? "text-white hover:bg-white/20 hover:text-white flex items-center gap-2"}>
+                <Button variant={variant as any} size={size as any} className={className ?? 'text-white hover:bg-white/20 hover:text-white flex items-center gap-2'}>
                     {compact ? (
                         <>
                           <Plug className="h-4 w-4" />
-                          <span>{triggerLabel ?? 'Connectors'}</span>
+                          <span>{selectedBu && selectedLob ? `${selectedBu.name} - ${selectedLob.name}` : (triggerLabel ?? 'Connectors')}</span>
+                          <span
+                            role="button"
+                            tabIndex={selectedLob ? 0 : -1}
+                            aria-disabled={!selectedLob}
+                            className={cn('ml-1 inline-flex items-center justify-center rounded p-1 hover:bg-white/10', !selectedLob && 'opacity-50 pointer-events-none')}
+                            title={selectedLob ? `Attach CSV/Excel to ${selectedLob.name}` : 'Select a BU/LOB first'}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (selectedLob) handleUploadClick(selectedLob.id); }}
+                            onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && selectedLob) { e.preventDefault(); e.stopPropagation(); handleUploadClick(selectedLob.id); } }}
+                          >
+                            <UploadCloud className="h-4 w-4" />
+                            <span className="sr-only">Attach CSV/Excel</span>
+                          </span>
                           <ChevronDown className="h-4 w-4" />
                         </>
                     ) : (
                         <>
                           <span>
-                            {selectedBu ? `${selectedBu.name} / ${selectedLob?.name || 'Select LOB'}` : 'Select a Business Unit'}
+                            {selectedBu && selectedLob ? `${selectedBu.name} - ${selectedLob.name}` : (selectedBu ? selectedBu.name : 'Select a Business Unit')}
+                          </span>
+                          <span
+                            role="button"
+                            tabIndex={selectedLob ? 0 : -1}
+                            aria-disabled={!selectedLob}
+                            className={cn('ml-1 inline-flex items-center justify-center rounded p-1 hover:bg-white/10', !selectedLob && 'opacity-50 pointer-events-none')}
+                            title={selectedLob ? `Attach CSV/Excel to ${selectedLob.name}` : 'Select a BU/LOB first'}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (selectedLob) handleUploadClick(selectedLob.id); }}
+                            onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && selectedLob) { e.preventDefault(); e.stopPropagation(); handleUploadClick(selectedLob.id); } }}
+                          >
+                            <UploadCloud className="h-4 w-4" />
+                            <span className="sr-only">Attach CSV/Excel</span>
                           </span>
                           <ChevronDown className="h-4 w-4" />
                         </>
@@ -204,21 +229,52 @@ export default function BuLobSelector({
                 {businessUnits.map((bu) => (
                     <DropdownMenuSub key={bu.id}>
                         <DropdownMenuSubTrigger>
-                            <Folder className="mr-2 h-4 w-4" style={{ color: bu.color }}/>
-                            <span>{bu.name}</span>
+                            <div className="flex items-center gap-2">
+                                <Folder className="mr-2 h-4 w-4" style={{ color: bu.color }}/>
+                                <span>{bu.name}</span>
+                            </div>
+                            {selectedBu?.id === bu.id && (
+                                <span className="ml-auto text-xs text-muted-foreground">Current</span>
+                            )}
                         </DropdownMenuSubTrigger>
                         <DropdownMenuPortal>
                             <DropdownMenuSubContent>
                                 <DropdownMenuLabel>{bu.name}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {bu.lobs.map((lob) => (
-                                    <DropdownMenuItem key={lob.id} onSelect={() => handleLobSelect(lob, bu)}>
-                                        <div className="flex items-center justify-between w-full">
-                                            <span>{lob.name}</span>
-                                            {lob.hasData ? <CheckCircle className="h-4 w-4 text-green-500" /> : <FileWarning className="h-4 w-4 text-amber-500" />}
-                                        </div>
-                                    </DropdownMenuItem>
-                                ))}
+                                {bu.lobs.map((lob) => {
+                                    const isSelected = selectedLob?.id === lob.id;
+                                    return (
+                                        <DropdownMenuItem
+                                            key={lob.id}
+                                            onSelect={() => handleLobSelect(lob, bu)}
+                                            className={cn(isSelected && 'bg-accent text-accent-foreground')}
+                                        >
+                                            <div className="flex items-center justify-between w-full">
+                                                <div className="flex items-center gap-2">
+                                                    {isSelected && <Check className="h-4 w-4 text-primary" />}
+                                                    <span>{lob.name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {lob.hasData ? (
+                                                        <CheckCircle className="h-4 w-4 text-green-500" />
+                                                    ) : (
+                                                        <FileWarning className="h-4 w-4 text-amber-500" />
+                                                    )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6"
+                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUploadClick(lob.id); }}
+                                                        title="Attach CSV/Excel"
+                                                    >
+                                                        <UploadCloud className="h-4 w-4" />
+                                                        <span className="sr-only">Attach CSV/Excel</span>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </DropdownMenuItem>
+                                    );
+                                })}
                                 {bu.lobs.length === 0 && (
                                     <DropdownMenuItem disabled>No LOBs created yet.</DropdownMenuItem>
                                 )}
