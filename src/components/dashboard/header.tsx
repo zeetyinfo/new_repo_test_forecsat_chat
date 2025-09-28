@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,14 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings, User, Bot, BarChart, Sun, Moon, FileText, Printer, UploadCloud } from 'lucide-react';
+import { Settings, User, Bot, BarChart, Sun, Moon, FileText, Printer, UploadCloud, Key } from 'lucide-react';
 import placeholderImages from '@/lib/placeholder-images.json';
 import { useApp } from './app-provider';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
-// Using server API to generate report to avoid bundling server-only Genkit in client
 import ReportViewer from './report-viewer';
 import BuLobSelector from './bu-lob-selector';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const ThemeToggle = () => {
     const [theme, setTheme] = React.useState('light');
@@ -52,6 +53,8 @@ const ThemeToggle = () => {
 
 const SettingsDropdown = ({ onGenerateReport, isReportGenerating }: { onGenerateReport: () => void, isReportGenerating: boolean }) => {
     const { state, dispatch } = useApp();
+    const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+    const [apiKey, setApiKey] = useState('');
 
     const showAgentMonitor = () => {
         dispatch({ type: 'SET_AGENT_MONITOR_OPEN', payload: true });
@@ -59,6 +62,30 @@ const SettingsDropdown = ({ onGenerateReport, isReportGenerating }: { onGenerate
 
     const handlePrint = () => {
         window.print();
+    };
+
+    const handleSaveApiKey = async () => {
+        try {
+            const response = await fetch('/api/save-api-key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ apiKey }),
+            });
+
+            if (response.ok) {
+                console.log('API Key saved successfully');
+                // You might want to show a toast notification here
+            } else {
+                console.error('Failed to save API key');
+                // You might want to show an error message here
+            }
+        } catch (error) {
+            console.error('Error saving API key:', error);
+        } finally {
+            setIsSettingsDialogOpen(false);
+        }
     };
 
     return (
@@ -72,6 +99,10 @@ const SettingsDropdown = ({ onGenerateReport, isReportGenerating }: { onGenerate
                 <DropdownMenuContent className="w-64" align="end">
                     <DropdownMenuLabel>System Settings</DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => setIsSettingsDialogOpen(true)}>
+                        <Key className="mr-2 h-4 w-4" />
+                        <span>Edit API Key</span>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onSelect={showAgentMonitor}>
                         <BarChart className="mr-2 h-4 w-4" />
                         <span>Show Agent Monitor Panel</span>
@@ -92,6 +123,30 @@ const SettingsDropdown = ({ onGenerateReport, isReportGenerating }: { onGenerate
                     </div>
                 </DropdownMenuContent>
             </DropdownMenu>
+            <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Edit API Key</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="api-key" className="text-right">
+                                API Key
+                            </Label>
+                            <Input
+                                id="api-key"
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                                className="col-span-3"
+                                placeholder="Enter your OpenAI API Key"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit" onClick={handleSaveApiKey}>Save changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
             <Dialog open={state.agentMonitor.isOpen} onOpenChange={(isOpen) => dispatch({ type: 'SET_AGENT_MONITOR_OPEN', payload: isOpen })}>
                 <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
                     <DialogHeader>
