@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useReducer } from 'react';
@@ -14,6 +13,9 @@ type AppState = {
   workflow: WorkflowStep[];
   isProcessing: boolean;
   agentMonitor: AgentMonitorProps;
+  dataPanelOpen: boolean;
+  isOnboarding: boolean;
+  queuedUserPrompt?: string | null;
 };
 
 type Action =
@@ -29,18 +31,22 @@ type Action =
   | { type: 'ADD_BU'; payload: { name: string; description: string } }
   | { type: 'ADD_LOB'; payload: { buId: string; name: string; description: string } }
   | { type: 'UPLOAD_DATA', payload: { lobId: string, file: File } }
-  | { type: 'TOGGLE_VISUALIZATION', payload: { messageId: string } };
+  | { type: 'TOGGLE_VISUALIZATION', payload: { messageId: string } }
+  | { type: 'SET_DATA_PANEL_OPEN'; payload: boolean }
+  | { type: 'END_ONBOARDING' }
+  | { type: 'QUEUE_USER_PROMPT'; payload: string }
+  | { type: 'CLEAR_QUEUED_PROMPT' };
 
 
 const initialState: AppState = {
   businessUnits: mockBusinessUnits,
-  selectedBu: mockBusinessUnits[0],
-  selectedLob: mockBusinessUnits[0].lobs[0],
+  selectedBu: null,
+  selectedLob: null,
   messages: [
     {
       id: '1',
       role: 'assistant',
-      content: "Hello! I'm your BI forecasting assistant. I see you have Premium Order Services selected. What would you like to do?",
+      content: "Hello! I'm your BI forecasting assistant. Select a Business Unit and Line of Business to get started.",
     },
   ],
   workflow: [],
@@ -48,6 +54,9 @@ const initialState: AppState = {
   agentMonitor: {
     isOpen: false,
   },
+  dataPanelOpen: false,
+  isOnboarding: true,
+  queuedUserPrompt: null,
 };
 
 const getRandomColor = () => {
@@ -98,6 +107,14 @@ function appReducer(state: AppState, action: Action): AppState {
         return { ...state, workflow: [], isProcessing: false };
     case 'SET_AGENT_MONITOR_OPEN':
         return { ...state, agentMonitor: { ...state.agentMonitor, isOpen: action.payload } };
+    case 'SET_DATA_PANEL_OPEN':
+        return { ...state, dataPanelOpen: action.payload };
+    case 'END_ONBOARDING':
+        return { ...state, isOnboarding: false };
+    case 'QUEUE_USER_PROMPT':
+        return { ...state, queuedUserPrompt: action.payload };
+    case 'CLEAR_QUEUED_PROMPT':
+        return { ...state, queuedUserPrompt: null };
     case 'ADD_BU': {
         const newBu: BusinessUnit = {
             id: `bu-${crypto.randomUUID()}`,

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { FormEvent, useEffect, useRef, useState } from 'react';
@@ -11,17 +10,28 @@ import { Bot, Paperclip, Send, User, BarChart } from 'lucide-react';
 import { useApp } from './app-provider';
 import type { ChatMessage, WeeklyData, WorkflowStep } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import OpenAI from 'openai';
+// Defer OpenAI import to runtime to keep client bundle lean and avoid SSR bundling issues
+let openaiClientPromise: Promise<any> | null = null;
+async function getOpenAI() {
+  if (!process.env.NEXT_PUBLIC_OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured');
+  }
+  if (!openaiClientPromise) {
+    openaiClientPromise = import('openai').then(({ default: OpenAI }) =>
+      new OpenAI({
+        apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY!,
+        dangerouslyAllowBrowser: true,
+      })
+    );
+  }
+  return openaiClientPromise;
+}
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
 import DataVisualizer from './data-visualizer';
 
 
-// Initialize OpenAI client only if API key is available
-const openai = process.env.NEXT_PUBLIC_OPENAI_API_KEY ? new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true, // Only for demo - use backend in production
-}) : null;
+// OpenAI client is loaded on demand via getOpenAI()
 
 class IntelligentChatHandler {
   conversationHistory: { role: 'user' | 'assistant' | 'system'; content: string }[];
@@ -45,10 +55,7 @@ class IntelligentChatHandler {
     ];
 
     try {
-      if (!openai) {
-        throw new Error('OpenAI API key not configured');
-      }
-      
+      const openai = await getOpenAI();
       const completion = await openai.chat.completions.create({
         model: "gpt-4",
         messages: messages,
@@ -184,6 +191,14 @@ export default function ChatPanel({ className }: { className?: string }) {
     }
   }, [state.messages]);
 
+  useEffect(() => {
+    if (state.queuedUserPrompt) {
+      submitMessage(state.queuedUserPrompt);
+      dispatch({ type: 'CLEAR_QUEUED_PROMPT' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.queuedUserPrompt]);
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -195,7 +210,7 @@ export default function ChatPanel({ className }: { className?: string }) {
                 payload: {
                     id: crypto.randomUUID(),
                     role: 'assistant',
-                    content: `Please select a Line of Business from the sidebar before uploading data.`
+                    content: `Please select a Line of Business using the BU/LOB selector before uploading data.`
                 }
             })
         }
@@ -307,6 +322,7 @@ export default function ChatPanel({ className }: { className?: string }) {
     };
     
     const handleVisualizeClick = (messageId: string) => {
+      dispatch({ type: 'SET_DATA_PANEL_OPEN', payload: true });
       dispatch({ type: 'TOGGLE_VISUALIZATION', payload: { messageId } });
     };
 
@@ -350,6 +366,9 @@ export default function ChatPanel({ className }: { className?: string }) {
                 className="hidden"
                 accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
               />
+              <Button variant="ghost" size="icon" type="button" onClick={() => dispatch({ type: 'SET_DATA_PANEL_OPEN', payload: true })} title="Open preview">
+                <BarChart className="h-5 w-5" />
+              </Button>
               <Input name="message" placeholder="Ask about forecasting..." autoComplete="off" disabled={isAssistantTyping} />
               <Button type="submit" size="icon" disabled={isAssistantTyping}>
                 <Send className="h-5 w-5" />
@@ -370,6 +389,3 @@ export default function ChatPanel({ className }: { className?: string }) {
     </>
   );
 }
-
-    
-    

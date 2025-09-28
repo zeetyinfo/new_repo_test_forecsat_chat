@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -17,9 +16,9 @@ import placeholderImages from '@/lib/placeholder-images.json';
 import { useApp } from './app-provider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
-import BuLobSelector from './bu-lob-selector';
-import { generateReport } from '@/ai/flows/chatbot-generate-report';
+// Using server API to generate report to avoid bundling server-only Genkit in client
 import ReportViewer from './report-viewer';
+import BuLobSelector from './bu-lob-selector';
 
 const ThemeToggle = () => {
     const [theme, setTheme] = React.useState('light');
@@ -119,27 +118,30 @@ export default function Header() {
   const handleGenerateReport = async () => {
     setIsReportGenerating(true);
     try {
-        const { selectedBu, selectedLob, messages } = state;
-        const context = `
+      const { selectedBu, selectedLob, messages } = state;
+      const context = `
             Business Unit: ${selectedBu?.name}
             Line of Business: ${selectedLob?.name}
             Data Summary: ${selectedLob?.recordCount} records, completeness ${selectedLob?.dataQuality?.completeness}%, ${selectedLob?.dataQuality?.outliers} outliers.
         `;
-        const history = JSON.stringify(messages.map(m => ({ role: m.role, content: m.content })));
+      const history = JSON.stringify(messages.map(m => ({ role: m.role, content: m.content })));
 
-        const result = await generateReport({
-            conversationHistory: history,
-            analysisContext: context,
-        });
-        
-        setReportMarkdown(result.reportMarkdown);
-        setIsReportViewerOpen(true);
+      const res = await fetch('/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationHistory: history, analysisContext: context })
+      });
 
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const result = await res.json();
+      setReportMarkdown(result.reportMarkdown);
+      setIsReportViewerOpen(true);
     } catch (error) {
-        console.error("Failed to generate report:", error);
-        // Optionally, show a toast notification for the error
+      console.error('Failed to generate report:', error);
     } finally {
-        setIsReportGenerating(false);
+      setIsReportGenerating(false);
     }
   };
 
@@ -148,8 +150,12 @@ export default function Header() {
     <header className="h-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-between px-6 shrink-0 print:hidden">
         <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold">BI Forecasting Assistant</h1>
-             <span className="text-sm opacity-80 hidden md:inline">|</span>
-            <BuLobSelector />
+            {!state.isOnboarding && (
+              <>
+                <span className="text-sm opacity-80 hidden md:inline">|</span>
+                <BuLobSelector />
+              </>
+            )}
         </div>
         
         <div className="flex items-center space-x-4">
