@@ -17,10 +17,11 @@ import AgentMonitorPanel from './agent-monitor';
 import DataVisualizer from './data-visualizer';
 
 
-const openai = new OpenAI({
+// Initialize OpenAI client only if API key is available
+const openai = process.env.NEXT_PUBLIC_OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true, // Only for demo - use backend in production
-});
+}) : null;
 
 class IntelligentChatHandler {
   conversationHistory: { role: 'user' | 'assistant' | 'system'; content: string }[];
@@ -44,6 +45,10 @@ class IntelligentChatHandler {
     ];
 
     try {
+      if (!openai) {
+        throw new Error('OpenAI API key not configured');
+      }
+      
       const completion = await openai.chat.completions.create({
         model: "gpt-4",
         messages: messages,
@@ -63,6 +68,9 @@ class IntelligentChatHandler {
       return aiResponse || "Sorry, I couldn't generate a response.";
     } catch (error) {
       console.error('OpenAI Error:', error);
+      if (error instanceof Error && error.message.includes('API key not configured')) {
+        return "I need an OpenAI API key to provide intelligent responses. Please configure NEXT_PUBLIC_OPENAI_API_KEY in your .env.local file.";
+      }
       return "Sorry, I'm having trouble connecting to my brain right now. Please try again later.";
     }
   }
