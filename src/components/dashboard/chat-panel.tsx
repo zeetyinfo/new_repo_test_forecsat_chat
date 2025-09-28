@@ -29,8 +29,6 @@ async function getOpenAI() {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
 import DataVisualizer from './data-visualizer';
-import DataPanel from './data-panel';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 
 // OpenAI client is loaded on demand via getOpenAI()
@@ -316,6 +314,7 @@ export default function ChatPanel({ className }: { className?: string }) {
     };
     
     const handleVisualizeClick = (messageId: string) => {
+      dispatch({ type: 'SET_DATA_PANEL_OPEN', payload: true });
       dispatch({ type: 'TOGGLE_VISUALIZATION', payload: { messageId } });
     };
 
@@ -359,7 +358,7 @@ export default function ChatPanel({ className }: { className?: string }) {
                 className="hidden"
                 accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
               />
-              <Button variant="ghost" size="icon" type="button" onClick={() => dispatch({ type: 'SET_DATA_PANEL_OPEN', payload: true })} title="Open data panel">
+              <Button variant="ghost" size="icon" type="button" onClick={() => dispatch({ type: 'SET_DATA_PANEL_OPEN', payload: true })} title="Open preview">
                 <BarChart className="h-5 w-5" />
               </Button>
               <Input name="message" placeholder="Ask about forecasting..." autoComplete="off" disabled={isAssistantTyping} />
@@ -371,16 +370,6 @@ export default function ChatPanel({ className }: { className?: string }) {
         </div>
       </CardContent>
     </Card>
-    <Sheet open={state.dataPanelOpen} onOpenChange={(isOpen) => dispatch({ type: 'SET_DATA_PANEL_OPEN', payload: isOpen })}>
-      <SheetContent side="left" className="w-[92vw] sm:w-[640px] p-0">
-        <SheetHeader className="sr-only">
-          <SheetTitle>Data Panel</SheetTitle>
-        </SheetHeader>
-        <div className="h-full">
-          <DataPanel className="h-full" />
-        </div>
-      </SheetContent>
-    </Sheet>
     <Dialog open={state.agentMonitor.isOpen} onOpenChange={(isOpen) => dispatch({ type: 'SET_AGENT_MONITOR_OPEN', payload: isOpen })}>
         <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
           <DialogHeader>
