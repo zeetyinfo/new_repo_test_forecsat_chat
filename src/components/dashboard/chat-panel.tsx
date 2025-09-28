@@ -30,7 +30,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import AgentMonitorPanel from './agent-monitor';
 import DataVisualizer from './data-visualizer';
 import DataPanel from './data-panel';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 
 // OpenAI client is loaded on demand via getOpenAI()
