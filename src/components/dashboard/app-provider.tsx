@@ -84,10 +84,13 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_SELECTED_LOB':
         const isStillProcessingOnLobChange = state.workflow.some(step => step.status === 'active' || step.status === 'pending');
         return { ...state, selectedLob: action.payload, workflow: [], isProcessing: isStillProcessingOnLobChange };
-    case 'ADD_MESSAGE':
+    case 'ADD_MESSAGE': {
       // Remove typing indicator before adding new message
       const messages = state.messages.filter(m => !m.isTyping);
-      return { ...state, messages: [...messages, action.payload] };
+      const last = messages[messages.length - 1];
+      const isDuplicate = last && last.role === action.payload.role && last.content.trim() === action.payload.content.trim();
+      return isDuplicate ? state : { ...state, messages: [...messages, action.payload] };
+    }
     case 'UPDATE_LAST_MESSAGE':
         const updatedMessages = [...state.messages];
         const lastMessageIndex = updatedMessages.length - 1;
