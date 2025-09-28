@@ -149,8 +149,6 @@ export default function Header() {
     <header className="h-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-between px-6 shrink-0 print:hidden">
         <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold">BI Forecasting Assistant</h1>
-             <span className="text-sm opacity-80 hidden md:inline">|</span>
-            <BuLobSelector />
         </div>
         
         <div className="flex items-center space-x-4">
