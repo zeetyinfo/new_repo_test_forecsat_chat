@@ -32,7 +32,7 @@ const prompt = ai.definePrompt({
   name: 'summarizeUploadedDataPrompt',
   input: {schema: SummarizeUploadedDataInputSchema},
   output: {schema: SummarizeUploadedDataOutputSchema},
-  prompt: `You are a data analysis expert. Please provide a summary of the following data, including key statistics and data quality indicators. The data is in {{{fileType}}} format.\n\nData:\n{{{data}}}',
+  prompt: `You are a data analysis expert. Please provide a summary of the following data, including key statistics and data quality indicators. The data is in {{{fileType}}} format.\n\nData:\n{{{data}}}`,
 });
 
 const summarizeUploadedDataFlow = ai.defineFlow(
