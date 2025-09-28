@@ -330,6 +330,10 @@ export default function ChatPanel({ className }: { className?: string }) {
     };
     
     const handleVisualizeClick = (messageId: string) => {
+      const msg = state.messages.find(m => m.id === messageId);
+      const target = msg?.visualization?.target ?? 'units';
+      dispatch({ type: 'SET_DATA_PANEL_TARGET', payload: target });
+      dispatch({ type: 'SET_DATA_PANEL_MODE', payload: 'chart' });
       dispatch({ type: 'SET_DATA_PANEL_OPEN', payload: true });
       dispatch({ type: 'TOGGLE_VISUALIZATION', payload: { messageId } });
     };
