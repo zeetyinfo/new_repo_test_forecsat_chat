@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -15,7 +14,7 @@ import {
   DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Folder, PlusCircle, UploadCloud, CheckCircle, FileWarning } from 'lucide-react';
+import { ChevronDown, Folder, PlusCircle, UploadCloud, CheckCircle, FileWarning, Plug } from 'lucide-react';
 import { useApp } from './app-provider';
 import type { BusinessUnit, LineOfBusiness } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -99,7 +98,13 @@ function AddLobDialog({ isOpen, onOpenChange, buId }: { isOpen: boolean, onOpenC
 }
 
 
-export default function BuLobSelector() {
+export default function BuLobSelector({
+    compact = false,
+    className,
+    variant = 'ghost',
+    size = 'default',
+    triggerLabel,
+}: { compact?: boolean; className?: string; variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'link' | 'destructive'; size?: 'sm' | 'default' | 'lg' | 'icon'; triggerLabel?: string; }) {
     const { state, dispatch } = useApp();
     const { businessUnits, selectedBu, selectedLob } = state;
     const [isAddBuOpen, setAddBuOpen] = useState(false);
@@ -176,11 +181,21 @@ export default function BuLobSelector() {
         <>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-white hover:bg-white/20 hover:text-white flex items-center gap-2">
-                    <span>
-                        {selectedBu ? `${selectedBu.name} / ${selectedLob?.name || 'Select LOB'}` : 'Select a Business Unit'}
-                    </span>
-                    <ChevronDown className="h-4 w-4" />
+                <Button variant={variant as any} size={size as any} className={className ?? "text-white hover:bg-white/20 hover:text-white flex items-center gap-2"}>
+                    {compact ? (
+                        <>
+                          <Plug className="h-4 w-4" />
+                          <span>{triggerLabel ?? 'Connectors'}</span>
+                          <ChevronDown className="h-4 w-4" />
+                        </>
+                    ) : (
+                        <>
+                          <span>
+                            {selectedBu ? `${selectedBu.name} / ${selectedLob?.name || 'Select LOB'}` : 'Select a Business Unit'}
+                          </span>
+                          <ChevronDown className="h-4 w-4" />
+                        </>
+                    )}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-80">
