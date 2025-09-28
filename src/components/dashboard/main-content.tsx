@@ -9,6 +9,10 @@ import WelcomeHero from "./welcome-hero";
 export default function MainContent() {
   const { state } = useApp();
 
+  if (state.isOnboarding) {
+    return <WelcomeHero />;
+  }
+
   if (state.dataPanelOpen) {
     return (
       <main className="flex flex-1 overflow-hidden flex-col md:flex-row">
