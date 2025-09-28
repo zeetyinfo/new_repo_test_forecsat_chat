@@ -1,8 +1,7 @@
-
 import { AppProvider } from '@/components/dashboard/app-provider';
 import ChatPanel from '@/components/dashboard/chat-panel';
 import Header from '@/components/dashboard/header';
-import WorkflowTree from '@/components/dashboard/workflow-tree';
+import DataPanel from '@/components/dashboard/data-panel';
 
 export default function Home() {
   return (
