@@ -39,6 +39,10 @@ const zentereAuthFlow = ai.defineFlow(
     outputSchema: ZentereAuthOutputSchema,
   },
   async (input) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+
+    try {
     const formData = new URLSearchParams();
     formData.append('grant_type', input.grant_type);
     formData.append('client_id', input.client_id);
@@ -52,6 +56,7 @@ const zentereAuthFlow = ai.defineFlow(
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData.toString(),
+        signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -61,5 +66,13 @@ const zentereAuthFlow = ai.defineFlow(
 
     const data = await response.json();
     return ZentereAuthOutputSchema.parse(data);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Authentication request timed out after 10 seconds');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 );
