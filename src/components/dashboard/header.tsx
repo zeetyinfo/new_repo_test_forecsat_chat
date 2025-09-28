@@ -160,16 +160,44 @@ export default function Header() {
         
         <div className="flex items-center space-x-4">
              <ThemeToggle />
-            <button 
+            <button
                 onClick={showAgentMonitor}
                 className="p-2 rounded-lg bg-white/10 hover:bg-white/20"
                 title="Show Agent Monitor"
             >
                 <Bot className="w-5 h-5" />
             </button>
-            
+
+            <button
+                onClick={() => {
+                    // If no LOB selected, do nothing
+                    if (!state.selectedLob) return;
+                    const input = document.getElementById('header-upload-input') as HTMLInputElement | null;
+                    input?.click();
+                }}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50"
+                title={state.selectedLob ? `Attach CSV/Excel to ${state.selectedLob.name}` : 'Select a BU/LOB first'}
+                disabled={!state.selectedLob}
+            >
+                <UploadCloud className="w-5 h-5" />
+            </button>
+            <input
+                id="header-upload-input"
+                type="file"
+                className="hidden"
+                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && state.selectedLob) {
+                        dispatch({ type: 'UPLOAD_DATA', payload: { lobId: state.selectedLob.id, file } });
+                        // reset value so the same file can be selected twice if needed
+                        e.currentTarget.value = '';
+                    }
+                }}
+            />
+
             <SettingsDropdown onGenerateReport={handleGenerateReport} isReportGenerating={isReportGenerating} />
-            
+
             <div className="w-3 h-3 bg-green-400 rounded-full" title="System Online"></div>
 
             <DropdownMenu>
