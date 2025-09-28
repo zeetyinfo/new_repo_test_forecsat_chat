@@ -191,6 +191,14 @@ export default function ChatPanel({ className }: { className?: string }) {
     }
   }, [state.messages]);
 
+  useEffect(() => {
+    if (state.queuedUserPrompt) {
+      submitMessage(state.queuedUserPrompt);
+      dispatch({ type: 'CLEAR_QUEUED_PROMPT' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.queuedUserPrompt]);
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
