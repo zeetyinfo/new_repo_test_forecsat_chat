@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useReducer } from 'react';
 import type { BusinessUnit, LineOfBusiness, ChatMessage, WorkflowStep } from '@/lib/types';
-import { mockBusinessUnits, mockWorkflow } from '@/lib/data';
+import { mockBusinessUnits } from '@/lib/data';
 import type { AgentMonitorProps } from '@/lib/types';
 
 type AppState = {
@@ -63,7 +63,8 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_SELECTED_BU':
       return { ...state, selectedBu: action.payload, selectedLob: action.payload?.lobs[0] || null, workflow: [], isProcessing: false };
     case 'SET_SELECTED_LOB':
-      return { ...state, selectedLob: action.payload, workflow: [], isProcessing: false };
+        const isStillProcessingOnLobChange = state.workflow.some(step => step.status === 'active' || step.status === 'pending');
+        return { ...state, selectedLob: action.payload, workflow: [], isProcessing: isStillProcessingOnLobChange };
     case 'ADD_MESSAGE':
       // Remove typing indicator before adding new message
       const messages = state.messages.filter(m => !m.isTyping);
@@ -82,10 +83,13 @@ function appReducer(state: AppState, action: Action): AppState {
             step.id === action.payload.id ? { ...step, ...action.payload } : step
           );
         const isStillProcessing = newWorkflow.some(step => step.status === 'active' || step.status === 'pending');
+         // If all steps are completed, set isProcessing to false
+        const allCompleted = newWorkflow.every(step => step.status === 'completed');
+        
       return {
         ...state,
         workflow: newWorkflow,
-        isProcessing: isStillProcessing,
+        isProcessing: allCompleted ? false : isStillProcessing,
       };
     case 'SET_WORKFLOW':
       return { ...state, workflow: action.payload, isProcessing: true };
@@ -124,9 +128,7 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'UPLOAD_DATA': {
       // Here you would process the file. For now, we'll just simulate it.
       const recordCount = Math.floor(Math.random() * 5000) + 500; // Simulate records
-      return {
-        ...state,
-        businessUnits: state.businessUnits.map(bu => ({
+      const businessUnitsWithData = state.businessUnits.map(bu => ({
           ...bu,
           lobs: bu.lobs.map(lob =>
             lob.id === action.payload.lobId
@@ -145,7 +147,26 @@ function appReducer(state: AppState, action: Action): AppState {
               }
               : lob
           )
-        }))
+        }));
+        
+        const updatedLob = businessUnitsWithData
+            .flatMap(bu => bu.lobs)
+            .find(lob => lob.id === action.payload.lobId);
+
+        const newMessages: ChatMessage[] = [...state.messages];
+        
+        if (updatedLob) {
+            newMessages.push({
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `I've uploaded "${action.payload.file.name}" and analyzed it for the ${updatedLob.name} LOB. It has ${updatedLob.recordCount} records. What would you like to do next?`,
+                suggestions: ['Analyze data quality', 'Start a 30-day forecast', 'Explain this data']
+            });
+        }
+      return {
+        ...state,
+        businessUnits: businessUnitsWithData,
+        messages: newMessages
       };
     }
     default:

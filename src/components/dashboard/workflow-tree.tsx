@@ -4,7 +4,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GitMerge, CheckCircle2, AlertCircle, Circle, Clock, GitBranch, MoreVertical, Play, Folder, UploadCloud, FileWarning, CheckCircle, PlusCircle } from 'lucide-react';
+import { GitMerge, CheckCircle2, AlertCircle, Clock, GitBranch, MoreVertical, Play, Folder, UploadCloud, FileWarning, CheckCircle, PlusCircle } from 'lucide-react';
 import type { WorkflowStep, WorkflowStatus, BusinessUnit, LineOfBusiness } from '@/lib/types';
 import { useApp } from './app-provider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -66,12 +66,12 @@ function WorkflowNode({ step }: { step: WorkflowStep }) {
   );
 }
 
-const LobItem = ({ lob, onSelect, isSelected }: { lob: LineOfBusiness, onSelect: (lob: LineOfBusiness) => void, isSelected: boolean }) => {
+const LobItem = ({ lob, bu, onSelect, isSelected }: { lob: LineOfBusiness, bu: BusinessUnit, onSelect: (lob: LineOfBusiness, bu: BusinessUnit) => void, isSelected: boolean }) => {
     const { dispatch } = useApp();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSelect = () => {
-        onSelect(lob);
+        onSelect(lob, bu);
     };
 
     const handleUploadClick = () => {
@@ -287,7 +287,7 @@ export default function WorkflowTree({ className }: { className?: string }) {
   const handleBuSelect = (bu: BusinessUnit) => {
     dispatch({ type: 'SET_SELECTED_BU', payload: bu });
     if(bu.lobs.length > 0){
-        handleLobSelect(bu.lobs[0]);
+        handleLobSelect(bu.lobs[0], bu);
     } else {
         dispatch({ type: 'SET_SELECTED_LOB', payload: null });
         dispatch({
@@ -301,28 +301,35 @@ export default function WorkflowTree({ className }: { className?: string }) {
     }
   };
 
-  const handleLobSelect = (lob: LineOfBusiness) => {
+  const handleLobSelect = (lob: LineOfBusiness, bu: BusinessUnit) => {
     dispatch({ type: 'RESET_WORKFLOW' });
+    dispatch({ type: 'SET_SELECTED_BU', payload: bu });
+    dispatch({ type: 'SET_SELECTED_LOB', payload: lob });
+
     if (!lob.hasData) {
       dispatch({
         type: 'ADD_MESSAGE',
         payload: {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: `No data is available for **${lob.name}**. Please upload data to begin analysis.`
+          content: `No data is available for **${lob.name}**. Please upload a CSV or Excel file to begin analysis.`
         }
       });
     } else {
+        const dataQuality = lob.dataQuality;
+        const trend = dataQuality?.trend ? `a ${dataQuality.trend} trend` : "an undetermined trend";
+        const seasonality = dataQuality?.seasonality ? ` with ${dataQuality.seasonality.replace(/_/g, ' ')} seasonality` : '';
+
         dispatch({
             type: 'ADD_MESSAGE',
             payload: {
                 id: crypto.randomUUID(),
                 role: 'assistant',
-                content: `Great! For **${lob.name}**, I have ${lob.recordCount} records ready. What would you like to do?`
+                content: `Great! For **${lob.name}**, I have ${lob.recordCount} records. The data shows ${trend}${seasonality}.`,
+                suggestions: ['Analyze data quality', 'Start a 30-day forecast', 'Explain this data']
             }
         })
     }
-    dispatch({ type: 'SET_SELECTED_LOB', payload: lob });
   };
 
   const openAddLobModal = (buId: string) => {
@@ -336,12 +343,15 @@ export default function WorkflowTree({ className }: { className?: string }) {
         <Accordion type="multiple" className="w-full" defaultValue={businessUnits.map(bu => bu.id)}>
             {businessUnits.map((bu) => (
             <AccordionItem value={bu.id} key={bu.id}>
-                 <div 
-                    className={cn("flex items-center px-4 hover:bg-muted/50 group", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}
-                >
+                 <div className={cn("flex items-center px-4 group", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}>
                     <AccordionTrigger 
                         className="flex-1 text-left py-2 hover:no-underline"
-                        onClick={() => handleBuSelect(bu)}
+                        onClick={(e) => {
+                            if (selectedBu?.id !== bu.id) {
+                                handleBuSelect(bu);
+                            }
+                            e.stopPropagation();
+                        }}
                     >
                         <div className="flex items-center gap-3 flex-1">
                             <Folder className="h-4 w-4" style={{ color: bu.color }} />
@@ -366,6 +376,7 @@ export default function WorkflowTree({ className }: { className?: string }) {
                     <LobItem
                     key={lob.id}
                     lob={lob}
+                    bu={bu}
                     onSelect={handleLobSelect}
                     isSelected={selectedLob?.id === lob.id}
                     />
@@ -423,7 +434,9 @@ export default function WorkflowTree({ className }: { className?: string }) {
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              {renderContent()}
+              <div className="h-[50vh] overflow-y-auto">
+                {renderContent()}
+              </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
