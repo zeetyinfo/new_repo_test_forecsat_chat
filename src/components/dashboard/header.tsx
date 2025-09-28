@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,12 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings, User, Bot, BarChart, Sun, Moon } from 'lucide-react';
+import { Settings, User, Bot, BarChart, Sun, Moon, FileText, Printer } from 'lucide-react';
 import placeholderImages from '@/lib/placeholder-images.json';
 import { useApp } from './app-provider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
 import BuLobSelector from './bu-lob-selector';
+import { generateReport } from '@/ai/flows/chatbot-generate-report';
+import ReportViewer from './report-viewer';
 
 const ThemeToggle = () => {
     const [theme, setTheme] = React.useState('light');
@@ -49,11 +51,15 @@ const ThemeToggle = () => {
 };
 
 
-const SettingsDropdown = () => {
+const SettingsDropdown = ({ onGenerateReport, isReportGenerating }: { onGenerateReport: () => void, isReportGenerating: boolean }) => {
     const { state, dispatch } = useApp();
 
     const showAgentMonitor = () => {
         dispatch({ type: 'SET_AGENT_MONITOR_OPEN', payload: true });
+    };
+
+    const handlePrint = () => {
+        window.print();
     };
 
     return (
@@ -71,11 +77,13 @@ const SettingsDropdown = () => {
                         <BarChart className="mr-2 h-4 w-4" />
                         <span>Show Agent Monitor Panel</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem disabled>
-                        <span>System Status & Health</span>
+                    <DropdownMenuItem onSelect={onGenerateReport} disabled={isReportGenerating}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>{isReportGenerating ? 'Generating Report...' : 'Generate Report'}</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem disabled>
-                        <span>OpenAI Configuration</span>
+                    <DropdownMenuItem onSelect={handlePrint}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        <span>Print/Export Dashboard</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">
@@ -99,14 +107,45 @@ const SettingsDropdown = () => {
 
 export default function Header() {
   const userAvatar = placeholderImages.placeholderImages.find(p => p.id === 'user-avatar');
-  const { dispatch } = useApp();
+  const { state, dispatch } = useApp();
+  const [isReportGenerating, setIsReportGenerating] = useState(false);
+  const [reportMarkdown, setReportMarkdown] = useState<string | null>(null);
+  const [isReportViewerOpen, setIsReportViewerOpen] = useState(false);
 
   const showAgentMonitor = () => {
     dispatch({ type: 'SET_AGENT_MONITOR_OPEN', payload: true });
   };
+  
+  const handleGenerateReport = async () => {
+    setIsReportGenerating(true);
+    try {
+        const { selectedBu, selectedLob, messages } = state;
+        const context = `
+            Business Unit: ${selectedBu?.name}
+            Line of Business: ${selectedLob?.name}
+            Data Summary: ${selectedLob?.recordCount} records, completeness ${selectedLob?.dataQuality?.completeness}%, ${selectedLob?.dataQuality?.outliers} outliers.
+        `;
+        const history = JSON.stringify(messages.map(m => ({ role: m.role, content: m.content })));
+
+        const result = await generateReport({
+            conversationHistory: history,
+            analysisContext: context,
+        });
+        
+        setReportMarkdown(result.reportMarkdown);
+        setIsReportViewerOpen(true);
+
+    } catch (error) {
+        console.error("Failed to generate report:", error);
+        // Optionally, show a toast notification for the error
+    } finally {
+        setIsReportGenerating(false);
+    }
+  };
+
 
   return (
-    <header className="h-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-between px-6 shrink-0">
+    <header className="h-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-between px-6 shrink-0 print:hidden">
         <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold">BI Forecasting Assistant</h1>
              <span className="text-sm opacity-80 hidden md:inline">|</span>
@@ -123,7 +162,7 @@ export default function Header() {
                 <Bot className="w-5 h-5" />
             </button>
             
-            <SettingsDropdown />
+            <SettingsDropdown onGenerateReport={handleGenerateReport} isReportGenerating={isReportGenerating} />
             
             <div className="w-3 h-3 bg-green-400 rounded-full" title="System Online"></div>
 
@@ -157,6 +196,13 @@ export default function Header() {
             </DropdownMenuContent>
             </DropdownMenu>
         </div>
+        {reportMarkdown && (
+            <ReportViewer 
+                isOpen={isReportViewerOpen}
+                onOpenChange={setIsReportViewerOpen}
+                markdownContent={reportMarkdown}
+            />
+        )}
     </header>
   );
 }
