@@ -373,6 +373,9 @@ export default function ChatPanel({ className }: { className?: string }) {
     </Card>
     <Sheet open={state.dataPanelOpen} onOpenChange={(isOpen) => dispatch({ type: 'SET_DATA_PANEL_OPEN', payload: isOpen })}>
       <SheetContent side="left" className="w-[92vw] sm:w-[640px] p-0">
+        <SheetHeader className="sr-only">
+          <SheetTitle>Data Panel</SheetTitle>
+        </SheetHeader>
         <div className="h-full">
           <DataPanel className="h-full" />
         </div>
