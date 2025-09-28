@@ -277,16 +277,24 @@ export default function ChatPanel({ className }: { className?: string }) {
                     .filter(s => s.length > 0);
             }
             
-            let visualization;
-            const keywords = ['analyze', 'forecast', 'data', 'visualize'];
-            const shouldVisualize = keywords.some(keyword => messageText.toLowerCase().includes(keyword) || content.toLowerCase().includes(keyword));
+            const inferTargetFromText = (txt: string): 'units' | 'revenue' => {
+              return /(revenue|sales|amount|gmv|income)/i.test(txt) ? 'revenue' : 'units';
+            };
+            const hasVizKeyword = /(visuali[sz]e|chart|plot|graph)/i.test(messageText) || /(visuali[sz]e|chart|plot|graph)/i.test(content);
+            const hasVizSuggestion = suggestions.some(s => /(visuali[sz]e|chart|plot|graph)/i.test(s));
+            const mentionsDataSignals = /(trend|seasonality|units|revenue|time\s*series)/i.test(content + ' ' + messageText);
+            const hasNumbers = /\d{2,}/.test(content);
 
-            if(shouldVisualize && state.selectedLob?.hasData && state.selectedLob?.mockData) {
+            let visualization;
+            const shouldVisualize = state.selectedLob?.hasData && state.selectedLob?.mockData && (hasVizKeyword || hasVizSuggestion || (mentionsDataSignals && hasNumbers));
+
+            if (shouldVisualize) {
+                const combined = `${messageText} ${content} ${suggestions.join(' ')}`;
                 visualization = {
-                    data: state.selectedLob.mockData,
-                    target: 'units' as 'units' | 'revenue',
+                    data: state.selectedLob!.mockData!,
+                    target: inferTargetFromText(combined),
                     isShowing: false,
-                }
+                };
             }
 
 
