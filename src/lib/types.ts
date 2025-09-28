@@ -1,9 +1,10 @@
 export type WeeklyData = {
   week: string;
-  units: number;
-  revenue: number;
+  units: number | null;
+  revenue: number | null;
   date: Date;
   isOutlier?: boolean;
+  isMissing?: boolean;
 };
 
 export type DataQuality = {

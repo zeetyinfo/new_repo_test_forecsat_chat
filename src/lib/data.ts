@@ -18,7 +18,8 @@ function generateWeeklyData(totalRecords: number, lobType: string): WeeklyData[]
     const weeklyMultiplier = week % 7 < 5 ? 1.2 : 0.8; // Weekday vs weekend
     const randomVariation = 0.9 + Math.random() * 0.2;
     const isOutlier = Math.random() < 0.05; // 5% chance of being an outlier
-    
+    const isMissing = Math.random() < 0.03; // 3% chance of being missing data
+
     let units = Math.round(baseValue * seasonalMultiplier * weeklyMultiplier * randomVariation);
     if(isOutlier) {
       units = units * (Math.random() > 0.5 ? 1.5 : 0.5); // make outliers more obvious
@@ -26,10 +27,11 @@ function generateWeeklyData(totalRecords: number, lobType: string): WeeklyData[]
     
     data.push({
       week: `2024-W${week.toString().padStart(2, '0')}`,
-      units: Math.round(units),
-      revenue: Math.round(units * 150 * (isOutlier ? (Math.random() > 0.5 ? 1.2 : 0.8) : 1)),
+      units: isMissing ? null : Math.round(units),
+      revenue: isMissing ? null : Math.round(units * 150 * (isOutlier ? (Math.random() > 0.5 ? 1.2 : 0.8) : 1)),
       date: new Date(2024, 0, week * 7),
-      isOutlier,
+      isOutlier: !isMissing && isOutlier,
+      isMissing: isMissing,
     });
   }
   

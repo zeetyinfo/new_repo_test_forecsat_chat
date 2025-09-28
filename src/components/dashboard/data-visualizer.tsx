@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart, LineChart } from 'lucide-react';
+import { BarChart, LineChart, AlertTriangle } from 'lucide-react';
 import {
   ResponsiveContainer,
   LineChart as RechartsLineChart,
@@ -30,11 +30,18 @@ interface DataVisualizerProps {
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    const dataPoint = payload[0].payload;
+    let valueText = `Value: ${payload[0].value?.toLocaleString()}`;
+    if (dataPoint.isMissing) {
+      valueText = 'Value: Missing';
+    }
+
     return (
       <div className="bg-background border p-2 rounded-lg shadow-lg">
         <p className="font-bold">{format(new Date(label), 'PPP')}</p>
-        <p className="text-sm text-foreground">{`Value: ${payload[0].value.toLocaleString()}`}</p>
-        {payload[0].payload.isOutlier && <p className="text-sm text-destructive font-semibold">Outlier Detected</p>}
+        <p className="text-sm text-foreground">{valueText}</p>
+        {dataPoint.isOutlier && <p className="text-sm text-destructive font-semibold">Outlier Detected</p>}
+        {dataPoint.isMissing && <p className="text-sm text-amber-600 font-semibold">Missing Data</p>}
       </div>
     );
   }
@@ -50,6 +57,7 @@ export default function DataVisualizer({ data, target }: DataVisualizerProps) {
   }));
   
   const outliers = formattedData.filter(d => d.isOutlier);
+  const missing = formattedData.filter(d => d.isMissing);
 
   const ChartComponent = chartType === 'line' ? RechartsLineChart : RechartsBarChart;
   const ChartElement = chartType === 'line' ? Line : Bar;
@@ -83,7 +91,7 @@ export default function DataVisualizer({ data, target }: DataVisualizerProps) {
             <ChartComponent data={formattedData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="dateString" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} domain={['dataMin', 'auto']} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               <ChartElement
@@ -92,16 +100,28 @@ export default function DataVisualizer({ data, target }: DataVisualizerProps) {
                 stroke={chartType === 'line' ? "hsl(var(--primary))" : undefined}
                 fill={chartType === 'bar' ? "hsl(var(--primary))" : undefined}
                 name={target.charAt(0).toUpperCase() + target.slice(1)}
+                connectNulls={true}
               />
               {outliers.map((outlier, index) => (
                  <ReferenceDot 
                     key={`outlier-${index}`}
                     x={outlier.dateString}
-                    y={outlier[target]}
+                    y={outlier[target]!}
                     r={5}
                     fill="hsl(var(--destructive))"
                     stroke="none"
                  />
+              ))}
+              {missing.map((point, index) => (
+                <ReferenceDot
+                  key={`missing-${index}`}
+                  x={point.dateString}
+                  y={0} // Position at the bottom
+                  r={5}
+                  shape={<AlertTriangle />}
+                  fill="hsl(var(--warning))"
+                  stroke="none"
+                />
               ))}
             </ChartComponent>
           </ResponsiveContainer>
