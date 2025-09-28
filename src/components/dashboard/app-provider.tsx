@@ -14,6 +14,9 @@ type AppState = {
   isProcessing: boolean;
   agentMonitor: AgentMonitorProps;
   dataPanelOpen: boolean;
+  dataPanelMode: 'chart' | 'table' | 'menu';
+  dataPanelTarget: 'units' | 'revenue';
+  dataPanelWidthPct: number; // 20 - 70
   isOnboarding: boolean;
   queuedUserPrompt?: string | null;
 };
@@ -33,6 +36,9 @@ type Action =
   | { type: 'UPLOAD_DATA', payload: { lobId: string, file: File } }
   | { type: 'TOGGLE_VISUALIZATION', payload: { messageId: string } }
   | { type: 'SET_DATA_PANEL_OPEN'; payload: boolean }
+  | { type: 'SET_DATA_PANEL_MODE'; payload: 'chart' | 'table' | 'menu' }
+  | { type: 'SET_DATA_PANEL_TARGET'; payload: 'units' | 'revenue' }
+  | { type: 'SET_DATA_PANEL_WIDTH'; payload: number }
   | { type: 'END_ONBOARDING' }
   | { type: 'QUEUE_USER_PROMPT'; payload: string }
   | { type: 'CLEAR_QUEUED_PROMPT' };
