@@ -8,7 +8,10 @@ export default function Home() {
     <AppProvider>
       <div className="flex flex-col h-screen bg-background text-foreground font-body">
         <Header />
-        <MainContent />
+        {/* Show landing hero first, then the assistant */}
+        {/* eslint-disable-next-line react/jsx-no-undef */}
+        { /* @ts-expect-error Server Component boundary */ }
+        <WelcomeHero />
       </div>
     </AppProvider>
   );
