@@ -186,7 +186,7 @@ export default function BuLobSelector({
                     {compact ? (
                         <>
                           <Plug className="h-4 w-4" />
-                          <span>{triggerLabel ?? 'Connectors'}</span>
+                          <span>{selectedBu && selectedLob ? `${selectedBu.name} - ${selectedLob.name}` : (triggerLabel ?? 'Connectors')}</span>
                           <span
                             role="button"
                             tabIndex={selectedLob ? 0 : -1}
@@ -204,7 +204,7 @@ export default function BuLobSelector({
                     ) : (
                         <>
                           <span>
-                            {selectedBu ? `${selectedBu.name} / ${selectedLob?.name || 'Select LOB'}` : 'Select a Business Unit'}
+                            {selectedBu && selectedLob ? `${selectedBu.name} - ${selectedLob.name}` : (selectedBu ? selectedBu.name : 'Select a Business Unit')}
                           </span>
                           <span
                             role="button"
