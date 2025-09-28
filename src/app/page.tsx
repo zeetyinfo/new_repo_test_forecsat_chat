@@ -1,6 +1,7 @@
 import { AppProvider } from '@/components/dashboard/app-provider';
 import Header from '@/components/dashboard/header';
 import MainContent from '@/components/dashboard/main-content';
+import WelcomeHero from '@/components/dashboard/welcome-hero';
 
 export default function Home() {
   return (
