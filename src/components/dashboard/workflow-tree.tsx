@@ -1,19 +1,16 @@
 
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GitMerge, CheckCircle2, AlertCircle, Clock, GitBranch, MoreVertical, Play, Folder, UploadCloud, FileWarning, CheckCircle, PlusCircle } from 'lucide-react';
-import type { WorkflowStep, WorkflowStatus, BusinessUnit, LineOfBusiness } from '@/lib/types';
+import { GitMerge, CheckCircle2, AlertCircle, Clock, GitBranch, MoreVertical, Play } from 'lucide-react';
+import type { WorkflowStep, WorkflowStatus } from '@/lib/types';
 import { useApp } from './app-provider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 
 const statusConfig: Record<WorkflowStatus, { icon: React.ReactNode; color: string }> = {
   completed: { icon: <CheckCircle2 className="h-5 w-5" />, color: 'text-green-500' },
@@ -66,175 +63,13 @@ function WorkflowNode({ step }: { step: WorkflowStep }) {
   );
 }
 
-const LobItem = ({ lob, bu, onSelect, isSelected }: { lob: LineOfBusiness, bu: BusinessUnit, onSelect: (lob: LineOfBusiness, bu: BusinessUnit) => void, isSelected: boolean }) => {
-    const { dispatch } = useApp();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleSelect = () => {
-        onSelect(lob, bu);
-    };
-
-    const handleUploadClick = () => {
-        fileInputRef.current?.click();
-    };
-    
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            dispatch({ type: 'UPLOAD_DATA', payload: { lobId: lob.id, file } });
-        }
-    };
-
-
-  return (
-    <div className="relative group">
-      <Button
-        variant={isSelected ? 'secondary' : 'ghost'}
-        className="w-full justify-start pr-10"
-        onClick={handleSelect}
-      >
-        <div className="flex items-center justify-between w-full">
-          <span>{lob.name}</span>
-          <div className="flex items-center space-x-2">
-             <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      {!lob.hasData && (
-                          <FileWarning className="h-4 w-4 text-amber-500" />
-                      )}
-                      {lob.hasData && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{lob.hasData ? 'Data ready for analysis' : 'No data available for this LOB.'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            {lob.recordCount > 0 && (
-              <span className="text-xs text-muted-foreground">{lob.recordCount} records</span>
-            )}
-          </div>
-        </div>
-      </Button>
-      {!lob.hasData && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 opacity-0 group-hover:opacity-100"
-                    onClick={handleUploadClick}
-                >
-                    <UploadCloud className="h-4 w-4" />
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Upload data for {lob.name}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-       <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        onChange={handleFileChange}
-        accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-      />
-    </div>
-  );
-};
-
-
-function AddBuDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (isOpen: boolean) => void }) {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const { dispatch } = useApp();
-
-    const handleSubmit = () => {
-        if (name) {
-            dispatch({ type: 'ADD_BU', payload: { name, description } });
-            onOpenChange(false);
-            setName('');
-            setDescription('');
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Create New Business Unit</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">Name</Label>
-                        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="description" className="text-right">Description</Label>
-                        <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button onClick={handleSubmit}>Create</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-function AddLobDialog({ isOpen, onOpenChange, buId }: { isOpen: boolean, onOpenChange: (isOpen: boolean) => void, buId: string | null }) {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const { dispatch } = useApp();
-
-    const handleSubmit = () => {
-        if (name && buId) {
-            dispatch({ type: 'ADD_LOB', payload: { buId, name, description } });
-            onOpenChange(false);
-            setName('');
-            setDescription('');
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Create New Line of Business</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">Name</Label>
-                        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="description" className="text-right">Description</Label>
-                        <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button onClick={handleSubmit}>Create</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 export default function WorkflowTree({ className }: { className?: string }) {
   const { state, dispatch } = useApp();
-  const { workflow, businessUnits, selectedBu, selectedLob } = state;
+  const { workflow } = state;
   const [isMobile, setIsMobile] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
 
-  const [isAddBuOpen, setAddBuOpen] = useState(false);
-  const [isAddLobOpen, setAddLobOpen] = useState(false);
-  const [currentBuForLob, setCurrentBuForLob] = useState<string | null>(null);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -284,118 +119,10 @@ export default function WorkflowTree({ className }: { className?: string }) {
   }, [workflow, dispatch, state.isProcessing]);
 
 
-  const handleBuSelect = (bu: BusinessUnit) => {
-    dispatch({ type: 'SET_SELECTED_BU', payload: bu });
-    if(bu.lobs.length > 0){
-        handleLobSelect(bu.lobs[0], bu);
-    } else {
-        dispatch({ type: 'SET_SELECTED_LOB', payload: null });
-        dispatch({
-            type: 'ADD_MESSAGE',
-            payload: {
-                id: crypto.randomUUID(),
-                role: 'assistant',
-                content: `Switched to Business Unit: **${bu.name}**. It has no Lines of Business. You can add one.`
-            }
-        });
-    }
-  };
-
-  const handleLobSelect = (lob: LineOfBusiness, bu: BusinessUnit) => {
-    dispatch({ type: 'RESET_WORKFLOW' });
-    dispatch({ type: 'SET_SELECTED_BU', payload: bu });
-    dispatch({ type: 'SET_SELECTED_LOB', payload: lob });
-
-    if (!lob.hasData) {
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: `No data is available for **${lob.name}**. Please upload a CSV or Excel file to begin analysis.`
-        }
-      });
-    } else {
-        const dataQuality = lob.dataQuality;
-        const trend = dataQuality?.trend ? `a ${dataQuality.trend} trend` : "an undetermined trend";
-        const seasonality = dataQuality?.seasonality ? ` with ${dataQuality.seasonality.replace(/_/g, ' ')} seasonality` : '';
-
-        dispatch({
-            type: 'ADD_MESSAGE',
-            payload: {
-                id: crypto.randomUUID(),
-                role: 'assistant',
-                content: `Great! For **${lob.name}**, I have ${lob.recordCount} records. The data shows ${trend}${seasonality}.`,
-                suggestions: ['Analyze data quality', 'Start a 30-day forecast', 'Explain this data']
-            }
-        })
-    }
-  };
-
-  const openAddLobModal = (buId: string) => {
-    setCurrentBuForLob(buId);
-    setAddLobOpen(true);
-  }
-
   const renderContent = () => (
     <div className="flex flex-col h-full">
         <ScrollArea className="flex-1">
-        <Accordion type="multiple" className="w-full" defaultValue={businessUnits.map(bu => bu.id)}>
-            {businessUnits.map((bu) => (
-            <AccordionItem value={bu.id} key={bu.id}>
-                 <div className={cn("flex items-center px-4 group", selectedBu?.id === bu.id && "bg-accent text-accent-foreground")}>
-                    <AccordionTrigger 
-                        className="flex-1 text-left py-2 hover:no-underline"
-                        onClick={(e) => {
-                            if (selectedBu?.id !== bu.id) {
-                                handleBuSelect(bu);
-                            }
-                            e.stopPropagation();
-                        }}
-                    >
-                        <div className="flex items-center gap-3 flex-1">
-                            <Folder className="h-4 w-4" style={{ color: bu.color }} />
-                            <span className="font-medium">{bu.name}</span>
-                        </div>
-                    </AccordionTrigger>
-                     <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); openAddLobModal(bu.id); }}>
-                                    <PlusCircle className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Add Line of Business to {bu.name}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </div>
-                <AccordionContent className="pl-8 pr-4 pt-0 pb-2 space-y-1">
-                {bu.lobs.map((lob) => (
-                    <LobItem
-                    key={lob.id}
-                    lob={lob}
-                    bu={bu}
-                    onSelect={handleLobSelect}
-                    isSelected={selectedLob?.id === lob.id}
-                    />
-                ))}
-                 {bu.lobs.length === 0 && (
-                    <p className="text-xs text-muted-foreground px-2 py-1">No Lines of Business yet.</p>
-                )}
-                </AccordionContent>
-            </AccordionItem>
-            ))}
-        </Accordion>
-        <div className="p-4">
-            <Button variant="outline" className="w-full" onClick={() => setAddBuOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Business Unit
-            </Button>
-        </div>
-
-        <div className='p-4 border-t'>
+        <div className='p-4'>
             <h3 className="text-sm font-semibold text-muted-foreground px-1 mb-4 mt-2 flex items-center gap-2">
                 <GitMerge className="h-4 w-4" />
                 CURRENT WORKFLOW
@@ -417,8 +144,6 @@ export default function WorkflowTree({ className }: { className?: string }) {
             )}
         </div>
         </ScrollArea>
-        <AddBuDialog isOpen={isAddBuOpen} onOpenChange={setAddBuOpen} />
-        <AddLobDialog isOpen={isAddLobOpen} onOpenChange={setAddLobOpen} buId={currentBuForLob} />
     </div>
   );
 
@@ -430,7 +155,7 @@ export default function WorkflowTree({ className }: { className?: string }) {
             <AccordionTrigger onClick={() => setIsOpen(!isOpen)} className="bg-card p-4 border-b">
               <div className="flex items-center gap-2">
                 <GitBranch className="h-6 w-6" />
-                <span className="text-lg font-semibold">Workflow & Data</span>
+                <span className="text-lg font-semibold">Current Workflow</span>
               </div>
             </AccordionTrigger>
             <AccordionContent>
@@ -449,7 +174,7 @@ export default function WorkflowTree({ className }: { className?: string }) {
       <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 border-b">
         <div className="flex items-center gap-2">
             <GitBranch className="h-6 w-6" />
-            <CardTitle className="text-lg">Workflow & Data</CardTitle>
+            <CardTitle className="text-lg">Current Workflow</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="p-0 flex-1 overflow-hidden">

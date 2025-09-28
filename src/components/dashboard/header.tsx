@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -16,6 +17,7 @@ import placeholderImages from '@/lib/placeholder-images.json';
 import { useApp } from './app-provider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
+import BuLobSelector from './bu-lob-selector';
 
 const ThemeToggle = () => {
     const [theme, setTheme] = React.useState('light');
@@ -107,7 +109,8 @@ export default function Header() {
     <header className="h-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-between px-6 shrink-0">
         <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold">BI Forecasting Assistant</h1>
-            <span className="text-sm opacity-80 hidden md:inline">Connected to OpenAI GPT-4</span>
+             <span className="text-sm opacity-80 hidden md:inline">|</span>
+            <BuLobSelector />
         </div>
         
         <div className="flex items-center space-x-4">
