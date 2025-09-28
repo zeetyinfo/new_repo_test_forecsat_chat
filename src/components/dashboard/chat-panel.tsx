@@ -98,7 +98,7 @@ INTELLIGENCE REQUIREMENTS:
 - If they haven't selected a LOB, guide them to choose from available data
 - Be dynamic and context-aware, not generic
 
-CRITICAL INSTRUCTION: At the end of EVERY response, you MUST guide the user on what to do next. Provide a section like "**What's next?**" with 2-3 brief, actionable suggestions as bullet points. These suggestions MUST be phrased as commands from the user to you, the bot. For example, use "Start a 30-day forecast" or "Analyze the data quality report". Do NOT phrase them as questions or suggestions for the user to say. The button text will be the user's next command. This is mandatory.
+CRITICAL INSTRUCTION: At the end of EVERY response, you MUST guide the user on what to do next. Provide a section like "**What's next?**" with 2-3 brief, actionable suggestions as bullet points. These suggestions MUST be phrased as commands from the user to you, the bot. For example: "Start a 30-day forecast" or "Analyze the data quality report". Do NOT phrase them as questions or suggestions for the user to say. The button text will be the user's next command. This is mandatory.
 
 CRITICAL: Users DO NOT need to upload data for existing LOBs - they have mock data ready to use. If a LOB has no data, they should be prompted to upload it.
 
@@ -202,6 +202,7 @@ export default function ChatPanel({ className }: { className?: string }) {
 
     const submitMessage = async (messageText: string) => {
         if (!messageText.trim()) return;
+        dispatch({ type: 'SET_PROCESSING', payload: true });
 
         const userMessage: ChatMessage = {
             id: crypto.randomUUID(),
@@ -225,8 +226,11 @@ export default function ChatPanel({ className }: { className?: string }) {
                 businessUnits: state.businessUnits,
             });
 
-            if (responseText.includes('[START_WORKFLOW]')) {
+            const isStartingWorkflow = responseText.includes('[START_WORKFLOW]');
+            if (isStartingWorkflow) {
                 dispatch({ type: 'SET_WORKFLOW', payload: mockWorkflow });
+            } else {
+                dispatch({ type: 'SET_PROCESSING', payload: false });
             }
 
             const suggestionRegex = /\*\*What's next\?\*\*([\s\S]*)/;
@@ -256,6 +260,7 @@ export default function ChatPanel({ className }: { className?: string }) {
                 isTyping: false
             };
             dispatch({ type: 'UPDATE_LAST_MESSAGE', payload: errorMessage });
+            dispatch({ type: 'SET_PROCESSING', payload: false });
         }
     };
 
@@ -304,8 +309,8 @@ export default function ChatPanel({ className }: { className?: string }) {
                 className="hidden"
                 accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
               />
-              <Input name="message" placeholder="Ask about forecasting..." autoComplete="off" disabled={state.isProcessing} />
-              <Button type="submit" size="icon" disabled={state.isProcessing}>
+              <Input name="message" placeholder="Ask about forecasting..." autoComplete="off" disabled={isAssistantTyping} />
+              <Button type="submit" size="icon" disabled={isAssistantTyping}>
                 <Send className="h-5 w-5" />
               </Button>
             </form>

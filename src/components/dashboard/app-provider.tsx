@@ -61,7 +61,7 @@ const getRandomColor = () => {
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'SET_SELECTED_BU':
-      return { ...state, selectedBu: action.payload, workflow: [], isProcessing: false };
+      return { ...state, selectedBu: action.payload, selectedLob: action.payload?.lobs[0] || null, workflow: [], isProcessing: false };
     case 'SET_SELECTED_LOB':
       return { ...state, selectedLob: action.payload, workflow: [], isProcessing: false };
     case 'ADD_MESSAGE':
