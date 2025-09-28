@@ -17,12 +17,19 @@ function generateWeeklyData(totalRecords: number, lobType: string): WeeklyData[]
     const seasonalMultiplier = 1 + 0.2 * Math.sin((week / 52) * 2 * Math.PI);
     const weeklyMultiplier = week % 7 < 5 ? 1.2 : 0.8; // Weekday vs weekend
     const randomVariation = 0.9 + Math.random() * 0.2;
+    const isOutlier = Math.random() < 0.05; // 5% chance of being an outlier
+    
+    let units = Math.round(baseValue * seasonalMultiplier * weeklyMultiplier * randomVariation);
+    if(isOutlier) {
+      units = units * (Math.random() > 0.5 ? 1.5 : 0.5); // make outliers more obvious
+    }
     
     data.push({
       week: `2024-W${week.toString().padStart(2, '0')}`,
-      units: Math.round(baseValue * seasonalMultiplier * weeklyMultiplier * randomVariation),
-      revenue: Math.round(baseValue * seasonalMultiplier * weeklyMultiplier * randomVariation * 150),
-      date: new Date(2024, 0, week * 7)
+      units: Math.round(units),
+      revenue: Math.round(units * 150 * (isOutlier ? (Math.random() > 0.5 ? 1.2 : 0.8) : 1)),
+      date: new Date(2024, 0, week * 7),
+      isOutlier,
     });
   }
   

@@ -28,7 +28,8 @@ type Action =
   | { type: 'SET_AGENT_MONITOR_OPEN'; payload: boolean }
   | { type: 'ADD_BU'; payload: { name: string; description: string } }
   | { type: 'ADD_LOB'; payload: { buId: string; name: string; description: string } }
-  | { type: 'UPLOAD_DATA', payload: { lobId: string, file: File } };
+  | { type: 'UPLOAD_DATA', payload: { lobId: string, file: File } }
+  | { type: 'TOGGLE_VISUALIZATION', payload: { messageId: string } };
 
 
 const initialState: AppState = {
@@ -167,6 +168,20 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         businessUnits: businessUnitsWithData,
         messages: newMessages
+      };
+    }
+    case 'TOGGLE_VISUALIZATION': {
+      return {
+        ...state,
+        messages: state.messages.map(msg => {
+          if (msg.id === action.payload.messageId && msg.visualization) {
+            // This is a simplified toggle, it just re-sets the visualization data
+            // to trigger a re-render. A more robust implementation might toggle a visible flag.
+            // For now, we'll assume the component itself handles visibility.
+            return { ...msg };
+          }
+          return msg;
+        })
       };
     }
     default:

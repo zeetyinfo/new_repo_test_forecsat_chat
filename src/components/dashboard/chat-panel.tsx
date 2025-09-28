@@ -7,14 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, Paperclip, Send, User } from 'lucide-react';
+import { Bot, Paperclip, Send, User, BarChart } from 'lucide-react';
 import { useApp } from './app-provider';
-import type { ChatMessage } from '@/lib/types';
+import type { ChatMessage, WeeklyData } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import OpenAI from 'openai';
 import { mockWorkflow } from '@/lib/data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
+import DataVisualizer from './data-visualizer';
 
 
 const openai = new OpenAI({
@@ -75,7 +76,7 @@ class IntelligentChatHandler {
         lobDataSummary = `${selectedLob.recordCount} records. The data shows ${selectedLob.dataQuality?.trend || 'an unknown'} trend and ${selectedLob.dataQuality?.seasonality?.replace(/_/g, ' ') || 'unknown'} seasonality. Completeness is ${selectedLob.dataQuality?.completeness}% with ${selectedLob.dataQuality?.outliers} outliers detected.`;
     }
 
-    return `You are an intelligent Business Intelligence forecasting assistant. Your goal is to guide users through a data science lifecycle for forecasting.
+    return `You are an intelligent Business Intelligence forecasting assistant. Your goal is to guide users through a data science lifecycle for forecasting. ALL of your responses MUST be in the context of the user's selected data.
 
 CURRENT CONTEXT:
 - Business Unit: ${selectedBu?.name || 'None'}
@@ -83,12 +84,12 @@ CURRENT CONTEXT:
 - Data Summary for selected LOB: ${lobDataSummary}
 
 YOUR BEHAVIOR:
-1.  **Be Context-Aware**: When the user asks to "analyze the data" or a similar query, you MUST use the "Data Summary" above to provide a specific, insightful analysis. Do NOT give a generic explanation of what data analysis is. Start your response with something like: "Certainly. Analyzing the data for ${selectedLob?.name}..."
+1.  **Be Context-Aware**: Every query is about the selected LOB data. When the user asks to "analyze the data" or a similar query, you MUST use the "Data Summary" above to provide a specific, insightful analysis. Do NOT give a generic explanation of what data analysis is. Start your response with something like: "Certainly. Analyzing the data for ${selectedLob?.name}..."
 2.  **Guide the User**: When a user selects a Line of Business (LOB), your first response should be an immediate analysis of that data.
-3.  **Plan Workflows**: When a user asks to create a forecast or start a workflow, you MUST respond with a detailed, step-by-step plan following a data science lifecycle: Data Analysis, Preprocessing, Model Training, Evaluation, and Forecast Generation. To trigger this workflow plan in the UI, your response MUST include the command string "[START_WORKFLOW]".
+3.  **Plan Workflows**: When a user asks to create a forecast, plan a workflow, or a similar term, you MUST respond with a detailed, step-by-step plan following a data science lifecycle: Data Analysis, Preprocessing, Model Training, Evaluation, and Forecast Generation. To trigger this workflow plan in the UI, your response MUST include the command string "[START_WORKFLOW]".
 4.  **Actionable Suggestions**: At the end of EVERY response, provide a "**What's next?**" section with 2-3 brief, actionable suggestions as bullet points. These suggestions MUST be phrased as direct commands from the user to you.
     - Correct format: "Start a 30-day forecast" or "Analyze data quality".
-    - Incorrect format: "Would you like to start a forecast?" or "You could start a forecast."
+    - Incorrect format: "Would you like to start a forecast?"
 
 Your responses should be intelligent, specific to their data, and action-oriented.`;
   }
@@ -96,7 +97,7 @@ Your responses should be intelligent, specific to their data, and action-oriente
 
 const chatHandler = new IntelligentChatHandler();
 
-function ChatBubble({ message, onSuggestionClick }: { message: ChatMessage, onSuggestionClick: (suggestion: string) => void }) {
+function ChatBubble({ message, onSuggestionClick, onVisualizeClick }: { message: ChatMessage, onSuggestionClick: (suggestion: string) => void, onVisualizeClick: (messageId: string, data: WeeklyData[]) => void }) {
   const isUser = message.role === 'user';
   return (
     <div className={cn('flex items-start gap-3 w-full', isUser ? 'justify-end' : 'justify-start')}>
@@ -125,9 +126,20 @@ function ChatBubble({ message, onSuggestionClick }: { message: ChatMessage, onSu
             <div dangerouslySetInnerHTML={{ __html: message.content.replace(/\[START_WORKFLOW\]/g, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />
             )}
         </div>
-        {message.suggestions && message.suggestions.length > 0 && (
+        {message.visualization && (
+          <div className="mt-2">
+            <DataVisualizer data={message.visualization.data} target={message.visualization.target} />
+          </div>
+        )}
+        {(message.suggestions || message.visualization) && (
             <div className="mt-2 flex flex-wrap gap-2">
-                {message.suggestions.map((suggestion, index) => (
+                {message.visualization && (
+                     <Button size="sm" variant="outline" onClick={() => onVisualizeClick(message.id, message.visualization!.data)}>
+                        <BarChart className="mr-2 h-4 w-4" />
+                        Visualize Data
+                    </Button>
+                )}
+                {message.suggestions?.map((suggestion, index) => (
                     <Button key={index} size="sm" variant="outline" onClick={() => onSuggestionClick(suggestion)}>
                         {suggestion}
                     </Button>
@@ -225,11 +237,21 @@ export default function ChatPanel({ className }: { className?: string }) {
                     .map(s => s.trim().replace(/^"|"$/g, '')) // trim and remove quotes
                     .filter(s => s.length > 0);
             }
+            
+            let visualization;
+            if(state.selectedLob?.hasData && state.selectedLob?.mockData) {
+                visualization = {
+                    data: state.selectedLob.mockData,
+                    target: 'units' as 'units' | 'revenue'
+                }
+            }
+
 
             const assistantMessage: Partial<ChatMessage> = {
                 content: content,
                 suggestions: suggestions,
                 isTyping: false,
+                visualization
             };
             dispatch({ type: 'UPDATE_LAST_MESSAGE', payload: assistantMessage });
 
@@ -255,6 +277,13 @@ export default function ChatPanel({ className }: { className?: string }) {
     const handleSuggestionClick = (suggestion: string) => {
         submitMessage(suggestion);
     };
+    
+    const handleVisualizeClick = (messageId: string, data: WeeklyData[]) => {
+      // This will toggle the visualization on the specific message
+      // We'll dispatch an action to find the message by ID and update it.
+      dispatch({ type: 'TOGGLE_VISUALIZATION', payload: { messageId } });
+    };
+
 
     const isAssistantTyping = state.isProcessing || state.messages[state.messages.length - 1]?.isTyping;
 
@@ -267,12 +296,18 @@ export default function ChatPanel({ className }: { className?: string }) {
           <ScrollArea className="flex-1" ref={scrollAreaRef}>
             <div className="p-4 space-y-4">
                 {state.messages.map(message => (
-                    <ChatBubble key={message.id} message={message} onSuggestionClick={handleSuggestionClick} />
+                    <ChatBubble 
+                      key={message.id} 
+                      message={message} 
+                      onSuggestionClick={handleSuggestionClick}
+                      onVisualizeClick={handleVisualizeClick} 
+                    />
                 ))}
                  {isAssistantTyping && !state.messages.some(m => m.isTyping) && (
                     <ChatBubble 
                         message={{ id: 'typing-indicator', role: 'assistant', content: '', isTyping: true }} 
                         onSuggestionClick={() => {}} 
+                        onVisualizeClick={() => {}}
                     />
                 )}
             </div>
@@ -309,7 +344,3 @@ export default function ChatPanel({ className }: { className?: string }) {
     </>
   );
 }
-
-    
-
-    

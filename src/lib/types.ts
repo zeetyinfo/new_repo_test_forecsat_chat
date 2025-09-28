@@ -3,6 +3,7 @@ export type WeeklyData = {
   units: number;
   revenue: number;
   date: Date;
+  isOutlier?: boolean;
 };
 
 export type DataQuality = {
@@ -60,6 +61,10 @@ export type ChatMessage = {
   content: string;
   isTyping?: boolean;
   suggestions?: string[];
+  visualization?: {
+    data: WeeklyData[];
+    target: 'units' | 'revenue';
+  }
 };
 
 export type WorkflowStatus = 'completed' | 'active' | 'pending' | 'error';
