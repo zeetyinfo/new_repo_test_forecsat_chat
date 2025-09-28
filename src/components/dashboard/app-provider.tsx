@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useReducer } from 'react';
@@ -14,6 +13,7 @@ type AppState = {
   workflow: WorkflowStep[];
   isProcessing: boolean;
   agentMonitor: AgentMonitorProps;
+  dataPanelOpen: boolean;
 };
 
 type Action =
@@ -29,7 +29,8 @@ type Action =
   | { type: 'ADD_BU'; payload: { name: string; description: string } }
   | { type: 'ADD_LOB'; payload: { buId: string; name: string; description: string } }
   | { type: 'UPLOAD_DATA', payload: { lobId: string, file: File } }
-  | { type: 'TOGGLE_VISUALIZATION', payload: { messageId: string } };
+  | { type: 'TOGGLE_VISUALIZATION', payload: { messageId: string } }
+  | { type: 'SET_DATA_PANEL_OPEN'; payload: boolean };
 
 
 const initialState: AppState = {
@@ -48,6 +49,7 @@ const initialState: AppState = {
   agentMonitor: {
     isOpen: false,
   },
+  dataPanelOpen: false,
 };
 
 const getRandomColor = () => {
@@ -98,6 +100,8 @@ function appReducer(state: AppState, action: Action): AppState {
         return { ...state, workflow: [], isProcessing: false };
     case 'SET_AGENT_MONITOR_OPEN':
         return { ...state, agentMonitor: { ...state.agentMonitor, isOpen: action.payload } };
+    case 'SET_DATA_PANEL_OPEN':
+        return { ...state, dataPanelOpen: action.payload };
     case 'ADD_BU': {
         const newBu: BusinessUnit = {
             id: `bu-${crypto.randomUUID()}`,
