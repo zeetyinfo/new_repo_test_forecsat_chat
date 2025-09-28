@@ -121,6 +121,14 @@ function appReducer(state: AppState, action: Action): AppState {
         return { ...state, agentMonitor: { ...state.agentMonitor, isOpen: action.payload } };
     case 'SET_DATA_PANEL_OPEN':
         return { ...state, dataPanelOpen: action.payload };
+    case 'SET_DATA_PANEL_MODE':
+        return { ...state, dataPanelMode: action.payload };
+    case 'SET_DATA_PANEL_TARGET':
+        return { ...state, dataPanelTarget: action.payload };
+    case 'SET_DATA_PANEL_WIDTH': {
+        const w = Math.min(70, Math.max(20, Math.round(action.payload)));
+        return { ...state, dataPanelWidthPct: w };
+    }
     case 'END_ONBOARDING':
         return { ...state, isOnboarding: false };
     case 'QUEUE_USER_PROMPT':
