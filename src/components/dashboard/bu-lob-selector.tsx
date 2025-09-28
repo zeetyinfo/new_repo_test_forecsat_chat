@@ -187,6 +187,15 @@ export default function BuLobSelector({
                         <>
                           <Plug className="h-4 w-4" />
                           <span>{triggerLabel ?? 'Connectors'}</span>
+                          <button
+                            className="ml-1 inline-flex items-center justify-center rounded p-1 hover:bg-white/10 disabled:opacity-50"
+                            title={selectedLob ? `Attach CSV/Excel to ${selectedLob.name}` : 'Select a BU/LOB first'}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (selectedLob) handleUploadClick(selectedLob.id); }}
+                            disabled={!selectedLob}
+                          >
+                            <UploadCloud className="h-4 w-4" />
+                            <span className="sr-only">Attach CSV/Excel</span>
+                          </button>
                           <ChevronDown className="h-4 w-4" />
                         </>
                     ) : (
@@ -194,6 +203,15 @@ export default function BuLobSelector({
                           <span>
                             {selectedBu ? `${selectedBu.name} / ${selectedLob?.name || 'Select LOB'}` : 'Select a Business Unit'}
                           </span>
+                          <button
+                            className="ml-1 inline-flex items-center justify-center rounded p-1 hover:bg-white/10 disabled:opacity-50"
+                            title={selectedLob ? `Attach CSV/Excel to ${selectedLob.name}` : 'Select a BU/LOB first'}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (selectedLob) handleUploadClick(selectedLob.id); }}
+                            disabled={!selectedLob}
+                          >
+                            <UploadCloud className="h-4 w-4" />
+                            <span className="sr-only">Attach CSV/Excel</span>
+                          </button>
                           <ChevronDown className="h-4 w-4" />
                         </>
                     )}
