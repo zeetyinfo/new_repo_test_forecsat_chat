@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings, User, Bot, BarChart, Sun, Moon, FileText, Printer } from 'lucide-react';
+import { Settings, User, Bot, BarChart, Sun, Moon, FileText, Printer, UploadCloud } from 'lucide-react';
 import placeholderImages from '@/lib/placeholder-images.json';
 import { useApp } from './app-provider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
