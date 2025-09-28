@@ -89,7 +89,7 @@ YOUR BEHAVIOR:
     - Example for a full forecast: [WORKFLOW_PLAN][{"name": "Data Analysis", "details": "Analyzing trends...", "estimatedTime": "30s", "agent": "Data Analysis Agent"}, ...][/WORKFLOW_PLAN]
     - Example for just analysis: [WORKFLOW_PLAN][{"name": "Data Ingestion", "details": "Loading data...", "estimatedTime": "10s", "agent": "Orchestrator Agent"}, {"name": "Exploratory Analysis", "details": "Calculating key stats...", "estimatedTime": "25s", "agent": "Data Analysis Agent"}][/WORKFLOW_PLAN]
     The plan MUST be appropriate for the user's request. A simple analysis request should have a shorter workflow than a full end-to-end forecast request.
-4.  **Actionable Suggestions**: At the end of EVERY response, provide a "**What's next?**" section with 2-3 brief, actionable suggestions as bullet points. These suggestions MUST be phrased as direct commands from the user to you.
+4.  **Actionable Suggestions**: At the end of EVERY response, provide a "**What's next?**" section with 2-3 brief, actionable suggestions as bullet points. These suggestions MUST be phrased as direct commands for the user to you, guiding them through a data science lifecycle (e.g., "Analyze data quality", "Explain the outliers", "Start a 30-day forecast").
     - Correct format: "Start a 30-day forecast" or "Analyze data quality".
     - Incorrect format: "Would you like to start a forecast?"
 
@@ -363,4 +363,5 @@ export default function ChatPanel({ className }: { className?: string }) {
   );
 }
 
+    
     

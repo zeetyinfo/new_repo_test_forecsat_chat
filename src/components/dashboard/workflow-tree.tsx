@@ -151,6 +151,10 @@ export default function WorkflowTree({ className }: { className?: string }) {
         </ScrollArea>
     </div>
   );
+  
+  const showAgentMonitor = () => {
+    dispatch({ type: 'SET_AGENT_MONITOR_OPEN', payload: true });
+  };
 
   if (isMobile) {
     return (
@@ -181,6 +185,18 @@ export default function WorkflowTree({ className }: { className?: string }) {
             <GitBranch className="h-6 w-6" />
             <CardTitle className="text-lg">Current Workflow</CardTitle>
         </div>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={showAgentMonitor} className="h-8 w-8">
+                        <Bot className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                    <p>Show Agent Monitor</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
       </CardHeader>
       <CardContent className="p-0 flex-1 overflow-hidden">
         {renderContent()}
@@ -188,3 +204,5 @@ export default function WorkflowTree({ className }: { className?: string }) {
     </Card>
   );
 }
+
+    

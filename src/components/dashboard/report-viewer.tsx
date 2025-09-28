@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef } from 'react';
@@ -23,8 +24,11 @@ function markdownToHtml(markdown: string): string {
         .replace(/\*\*(.*)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*)\*/g, '<em>$1</em>')
         .replace(/^- (.*$)/gmi, '<li class="ml-4 list-disc">$1</li>')
-        .replace(/(\r\n|\n){2,}/g, '<br/><br/>') // Handle paragraphs
-        .replace(/\n/g, '<br/>'); // Handle line breaks
+        .replace(/`([^`]+)`/g, '<code class="bg-muted text-foreground px-1 py-0.5 rounded text-sm">$1</code>')
+        .replace(/(\r\n|\n){2,}/g, '</p><p>')
+        .replace(/^(?!<h[1-3]>|<li>|<p>)/, '<p>')
+        .replace(/<\/p>$/, '')
+        .replace(/\n/g, '<br/>');
 }
 
 
@@ -34,7 +38,11 @@ export default function ReportViewer({ isOpen, onOpenChange, markdownContent }: 
   const handleExportToPdf = () => {
     const input = reportContentRef.current;
     if (input) {
-        html2canvas(input, { scale: 2 }).then((canvas) => {
+        html2canvas(input, { 
+            scale: 2,
+            useCORS: true, 
+            backgroundColor: window.getComputedStyle(document.body).backgroundColor === "rgb(10, 10, 20)" ? '#0A0A14' : '#FFFFFF'
+        }).then((canvas) => {
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -43,15 +51,18 @@ export default function ReportViewer({ isOpen, onOpenChange, markdownContent }: 
             const canvasHeight = canvas.height;
             const ratio = canvasWidth / pdfWidth;
             const imgHeight = canvasHeight / ratio;
-            let height = imgHeight;
+            
+            let heightLeft = imgHeight;
             let position = 0;
+
             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-            height -= pdfHeight;
-            while(height > 0) {
-                position = height - imgHeight;
+            heightLeft -= pdfHeight;
+
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
                 pdf.addPage();
                 pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                height -= pdfHeight;
+                heightLeft -= pdfHeight;
             }
             pdf.save('report.pdf');
         });
@@ -64,9 +75,9 @@ export default function ReportViewer({ isOpen, onOpenChange, markdownContent }: 
         <DialogHeader>
           <DialogTitle>Generated Analysis Report</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 bg-background">
           <ScrollArea className="h-full rounded-md border">
-            <div ref={reportContentRef} className="p-6 prose prose-sm max-w-none">
+            <div ref={reportContentRef} className="p-6 prose prose-sm max-w-none dark:prose-invert bg-background text-foreground">
               <div dangerouslySetInnerHTML={{ __html: markdownToHtml(markdownContent) }} />
             </div>
           </ScrollArea>
@@ -81,3 +92,5 @@ export default function ReportViewer({ isOpen, onOpenChange, markdownContent }: 
     </Dialog>
   );
 }
+
+    
