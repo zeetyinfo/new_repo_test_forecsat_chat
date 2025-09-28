@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GitMerge, CheckCircle2, AlertCircle, Clock, GitBranch, MoreVertical, Play } from 'lucide-react';
+import { GitMerge, CheckCircle2, AlertCircle, Clock, GitBranch, MoreVertical, Play, Bot } from 'lucide-react';
 import type { WorkflowStep, WorkflowStatus } from '@/lib/types';
 import { useApp } from './app-provider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -13,23 +13,27 @@ import { Button } from '../ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const statusConfig: Record<WorkflowStatus, { icon: React.ReactNode; color: string }> = {
-  completed: { icon: <CheckCircle2 className="h-5 w-5" />, color: 'text-green-500' },
-  active: { icon: <Play className="h-5 w-5 animate-pulse" />, color: 'text-blue-500' },
-  pending: { icon: <Clock className="h-5 w-5" />, color: 'text-gray-400' },
-  error: { icon: <AlertCircle className="h-5 w-5" />, color: 'text-red-500' },
+  completed: { icon: <CheckCircle2 />, color: 'text-green-500' },
+  active: { icon: <Play className="animate-pulse" />, color: 'text-blue-500' },
+  pending: { icon: <Clock />, color: 'text-gray-400' },
+  error: { icon: <AlertCircle />, color: 'text-red-500' },
 };
 
 function WorkflowNode({ step }: { step: WorkflowStep }) {
   const config = statusConfig[step.status];
 
   return (
-    <li className="flex gap-4">
-      <div className="flex flex-col items-center">
+    <li className="flex items-start gap-4 pl-2">
+      <div className="flex flex-col items-center h-full">
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <div className={cn("rounded-full h-10 w-10 flex items-center justify-center bg-muted", config.color, step.status === 'active' && 'animate-pulse ring-4 ring-blue-500/50')}>
-                        {React.cloneElement(config.icon as React.ReactElement, { className: "h-6 w-6 text-white"})}
+                    <div className={cn(
+                        "rounded-full h-8 w-8 flex items-center justify-center bg-card border", 
+                        config.color,
+                        step.status === 'active' ? 'ring-4 ring-blue-500/30 border-blue-500' : 'border-border'
+                    )}>
+                        {React.cloneElement(config.icon as React.ReactElement, { className: "h-5 w-5"})}
                     </div>
                 </TooltipTrigger>
                 <TooltipContent side="right">
@@ -37,10 +41,10 @@ function WorkflowNode({ step }: { step: WorkflowStep }) {
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>
-        {/* Render line only if it's not the last step */}
-        <div className="w-px h-full bg-border" />
+        {/* Render connecting line only if it's not the last step */}
+        <div className="w-px flex-grow bg-border my-2" />
       </div>
-      <div className="pb-8 flex-1">
+      <div className="pt-1 pb-8 flex-1">
         <div className="flex items-center justify-between group">
             <p className={cn("font-medium", step.status === 'active' && 'text-primary')}>{step.name}</p>
             <TooltipProvider>
@@ -56,8 +60,13 @@ function WorkflowNode({ step }: { step: WorkflowStep }) {
                 </Tooltip>
             </TooltipProvider>
         </div>
-        <p className="text-sm text-muted-foreground">Est. time: {step.estimatedTime}</p>
-        {step.agent && <p className="text-xs text-muted-foreground">Agent: {step.agent}</p>}
+        <p className="text-sm text-muted-foreground -mt-1">{step.estimatedTime}</p>
+        {step.agent && (
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2">
+                <Bot className="h-3 w-3" />
+                <span>{step.agent}</span>
+            </div>
+        )}
       </div>
     </li>
   );
@@ -123,23 +132,19 @@ export default function WorkflowTree({ className }: { className?: string }) {
     <div className="flex flex-col h-full">
         <ScrollArea className="flex-1">
         <div className='p-4'>
-            <h3 className="text-sm font-semibold text-muted-foreground px-1 mb-4 mt-2 flex items-center gap-2">
-                <GitMerge className="h-4 w-4" />
-                CURRENT WORKFLOW
-            </h3>
             {workflow.length > 0 ? (
-                <ol className='relative'>
+                <ol className='relative flex flex-col'>
                     {workflow.map((step, index) => (
                        <React.Fragment key={step.id}>
                             <WorkflowNode step={step} />
-                            {index < workflow.length -1 && <div className="w-px h-4 bg-border ml-5" />}
                         </React.Fragment>
                     ))}
                 </ol>
             ) : (
-                <div className="text-center text-sm text-muted-foreground py-4">
-                    <p>No active workflow.</p>
-                    <p>Start by asking the assistant to perform a task.</p>
+                <div className="text-center text-sm text-muted-foreground py-10 px-4">
+                    <GitMerge className="mx-auto h-10 w-10 text-muted-foreground/50 mb-4" />
+                    <p className='font-medium'>No Active Workflow</p>
+                    <p>Ask the assistant to start a forecast or analysis to see the steps here.</p>
                 </div>
             )}
         </div>
