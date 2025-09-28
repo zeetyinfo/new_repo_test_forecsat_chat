@@ -202,7 +202,7 @@ export default function ChatPanel({ className }: { className?: string }) {
                 payload: {
                     id: crypto.randomUUID(),
                     role: 'assistant',
-                    content: `Please select a Line of Business from the sidebar before uploading data.`
+                    content: `Please select a Line of Business using the BU/LOB selector before uploading data.`
                 }
             })
         }
