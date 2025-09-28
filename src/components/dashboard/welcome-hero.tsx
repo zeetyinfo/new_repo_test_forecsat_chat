@@ -43,7 +43,7 @@ export default function WelcomeHero() {
 
           <div className="mt-6 mx-auto max-w-3xl">
             <div className="rounded-2xl border bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/40 p-3 shadow-lg">
-              <div className="flex items-center gap-2">
+              <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); start(); }}>
                 <Bot className="h-5 w-5 text-muted-foreground" />
                 <Input
                   value={prompt}
@@ -52,10 +52,10 @@ export default function WelcomeHero() {
                   className="flex-1 border-0 focus-visible:ring-0 bg-transparent"
                 />
                 <BuLobSelector compact variant="secondary" size="sm" className="mr-2" triggerLabel="Connectors" />
-                <Button size="sm" onClick={start} disabled={!canContinue}>
+                <Button size="sm" type="submit" disabled={!canContinue}>
                   Start
                 </Button>
-              </div>
+              </form>
             </div>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               {[

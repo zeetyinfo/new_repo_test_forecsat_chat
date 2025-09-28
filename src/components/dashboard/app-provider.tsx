@@ -14,6 +14,9 @@ type AppState = {
   isProcessing: boolean;
   agentMonitor: AgentMonitorProps;
   dataPanelOpen: boolean;
+  dataPanelMode: 'chart' | 'table' | 'menu';
+  dataPanelTarget: 'units' | 'revenue';
+  dataPanelWidthPct: number; // 20 - 70
   isOnboarding: boolean;
   queuedUserPrompt?: string | null;
 };
@@ -33,6 +36,9 @@ type Action =
   | { type: 'UPLOAD_DATA', payload: { lobId: string, file: File } }
   | { type: 'TOGGLE_VISUALIZATION', payload: { messageId: string } }
   | { type: 'SET_DATA_PANEL_OPEN'; payload: boolean }
+  | { type: 'SET_DATA_PANEL_MODE'; payload: 'chart' | 'table' | 'menu' }
+  | { type: 'SET_DATA_PANEL_TARGET'; payload: 'units' | 'revenue' }
+  | { type: 'SET_DATA_PANEL_WIDTH'; payload: number }
   | { type: 'END_ONBOARDING' }
   | { type: 'QUEUE_USER_PROMPT'; payload: string }
   | { type: 'CLEAR_QUEUED_PROMPT' };
@@ -55,6 +61,9 @@ const initialState: AppState = {
     isOpen: false,
   },
   dataPanelOpen: false,
+  dataPanelMode: 'chart',
+  dataPanelTarget: 'units',
+  dataPanelWidthPct: 40,
   isOnboarding: true,
   queuedUserPrompt: null,
 };
@@ -75,10 +84,13 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_SELECTED_LOB':
         const isStillProcessingOnLobChange = state.workflow.some(step => step.status === 'active' || step.status === 'pending');
         return { ...state, selectedLob: action.payload, workflow: [], isProcessing: isStillProcessingOnLobChange };
-    case 'ADD_MESSAGE':
+    case 'ADD_MESSAGE': {
       // Remove typing indicator before adding new message
       const messages = state.messages.filter(m => !m.isTyping);
-      return { ...state, messages: [...messages, action.payload] };
+      const last = messages[messages.length - 1];
+      const isDuplicate = last && last.role === action.payload.role && last.content.trim() === action.payload.content.trim();
+      return isDuplicate ? state : { ...state, messages: [...messages, action.payload] };
+    }
     case 'UPDATE_LAST_MESSAGE':
         const updatedMessages = [...state.messages];
         const lastMessageIndex = updatedMessages.length - 1;
@@ -109,6 +121,14 @@ function appReducer(state: AppState, action: Action): AppState {
         return { ...state, agentMonitor: { ...state.agentMonitor, isOpen: action.payload } };
     case 'SET_DATA_PANEL_OPEN':
         return { ...state, dataPanelOpen: action.payload };
+    case 'SET_DATA_PANEL_MODE':
+        return { ...state, dataPanelMode: action.payload };
+    case 'SET_DATA_PANEL_TARGET':
+        return { ...state, dataPanelTarget: action.payload };
+    case 'SET_DATA_PANEL_WIDTH': {
+        const w = Math.min(70, Math.max(20, Math.round(action.payload)));
+        return { ...state, dataPanelWidthPct: w };
+    }
     case 'END_ONBOARDING':
         return { ...state, isOnboarding: false };
     case 'QUEUE_USER_PROMPT':
