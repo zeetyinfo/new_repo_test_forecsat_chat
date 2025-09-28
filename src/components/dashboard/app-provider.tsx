@@ -15,6 +15,7 @@ type AppState = {
   agentMonitor: AgentMonitorProps;
   dataPanelOpen: boolean;
   isOnboarding: boolean;
+  queuedUserPrompt?: string | null;
 };
 
 type Action =
@@ -32,7 +33,9 @@ type Action =
   | { type: 'UPLOAD_DATA', payload: { lobId: string, file: File } }
   | { type: 'TOGGLE_VISUALIZATION', payload: { messageId: string } }
   | { type: 'SET_DATA_PANEL_OPEN'; payload: boolean }
-  | { type: 'END_ONBOARDING' };
+  | { type: 'END_ONBOARDING' }
+  | { type: 'QUEUE_USER_PROMPT'; payload: string }
+  | { type: 'CLEAR_QUEUED_PROMPT' };
 
 
 const initialState: AppState = {
@@ -53,6 +56,7 @@ const initialState: AppState = {
   },
   dataPanelOpen: false,
   isOnboarding: true,
+  queuedUserPrompt: null,
 };
 
 const getRandomColor = () => {
@@ -107,6 +111,10 @@ function appReducer(state: AppState, action: Action): AppState {
         return { ...state, dataPanelOpen: action.payload };
     case 'END_ONBOARDING':
         return { ...state, isOnboarding: false };
+    case 'QUEUE_USER_PROMPT':
+        return { ...state, queuedUserPrompt: action.payload };
+    case 'CLEAR_QUEUED_PROMPT':
+        return { ...state, queuedUserPrompt: null };
     case 'ADD_BU': {
         const newBu: BusinessUnit = {
             id: `bu-${crypto.randomUUID()}`,
