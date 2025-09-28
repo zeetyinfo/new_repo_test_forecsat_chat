@@ -51,10 +51,24 @@ export default function WelcomeHero() {
                   placeholder="Describe what you need (e.g., Analyze ECOM Chat for trends, create a 30-day forecast)"
                   className="flex-1 border-0 focus-visible:ring-0 bg-transparent"
                 />
+                <BuLobSelector compact variant="secondary" size="sm" className="mr-2" triggerLabel="Connectors" />
                 <Button size="sm" onClick={start} disabled={!canContinue}>
                   Start
                 </Button>
               </div>
+            </div>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              {[
+                'Analyze data quality',
+                'Start a 30-day forecast',
+                'Explain the outliers',
+                'Visualize last 8 weeks revenue',
+                'Generate executive summary',
+              ].map((s) => (
+                <Button key={s} size="sm" variant="outline" onClick={() => setPrompt((p) => (p ? `${p} ${s}` : s))}>
+                  {s}
+                </Button>
+              ))}
             </div>
             <p className="mt-2 text-xs text-muted-foreground">After you click Start, we’ll continue in the assistant view.</p>
           </div>
