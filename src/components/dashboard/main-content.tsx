@@ -4,6 +4,7 @@ import React from "react";
 import { useApp } from "./app-provider";
 import DataPanel from "./data-panel";
 import ChatPanel from "./chat-panel";
+import WelcomeHero from "./welcome-hero";
 
 export default function MainContent() {
   const { state } = useApp();
