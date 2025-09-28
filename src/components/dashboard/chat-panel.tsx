@@ -9,10 +9,9 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bot, Paperclip, Send, User, BarChart } from 'lucide-react';
 import { useApp } from './app-provider';
-import type { ChatMessage, WeeklyData } from '@/lib/types';
+import type { ChatMessage, WeeklyData, WorkflowStep } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import OpenAI from 'openai';
-import { mockWorkflow } from '@/lib/data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
 import DataVisualizer from './data-visualizer';
@@ -86,7 +85,10 @@ CURRENT CONTEXT:
 YOUR BEHAVIOR:
 1.  **Be Context-Aware**: Every query is about the selected LOB data. When the user asks to "analyze the data" or a similar query, you MUST use the "Data Summary" above to provide a specific, insightful analysis. Do NOT give a generic explanation of what data analysis is. Start your response with something like: "Certainly. Analyzing the data for ${selectedLob?.name}..."
 2.  **Guide the User**: When a user selects a Line of Business (LOB), your first response should be an immediate analysis of that data.
-3.  **Plan Workflows**: When a user asks to create a forecast, plan a workflow, or a similar term, you MUST respond with a detailed, step-by-step plan following a data science lifecycle: Data Analysis, Preprocessing, Model Training, Evaluation, and Forecast Generation. To trigger this workflow plan in the UI, your response MUST include the command string "[START_WORKFLOW]".
+3.  **Dynamic Workflow Planning**: When a user asks to create a forecast, plan a workflow, or analyze data, you MUST respond with a detailed, step-by-step plan. This plan should be a JSON array embedded in your response using the format [WORKFLOW_PLAN]{...}[/WORKFLOW_PLAN]. The JSON should be an array of objects, each with 'name', 'details', 'estimatedTime', and 'agent' properties.
+    - Example for a full forecast: [WORKFLOW_PLAN][{"name": "Data Analysis", "details": "Analyzing trends...", "estimatedTime": "30s", "agent": "Data Analysis Agent"}, ...][/WORKFLOW_PLAN]
+    - Example for just analysis: [WORKFLOW_PLAN][{"name": "Data Ingestion", "details": "Loading data...", "estimatedTime": "10s", "agent": "Orchestrator Agent"}, {"name": "Exploratory Analysis", "details": "Calculating key stats...", "estimatedTime": "25s", "agent": "Data Analysis Agent"}][/WORKFLOW_PLAN]
+    The plan MUST be appropriate for the user's request. A simple analysis request should have a shorter workflow than a full end-to-end forecast request.
 4.  **Actionable Suggestions**: At the end of EVERY response, provide a "**What's next?**" section with 2-3 brief, actionable suggestions as bullet points. These suggestions MUST be phrased as direct commands from the user to you.
     - Correct format: "Start a 30-day forecast" or "Analyze data quality".
     - Incorrect format: "Would you like to start a forecast?"
@@ -123,13 +125,13 @@ function ChatBubble({ message, onSuggestionClick, onVisualizeClick }: { message:
                 <span className="h-2 w-2 animate-pulse rounded-full bg-current" style={{ animationDelay: '0.4s' }} />
             </div>
             ) : (
-            <div dangerouslySetInnerHTML={{ __html: message.content.replace(/\[START_WORKFLOW\]/g, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />
+            <div dangerouslySetInnerHTML={{ __html: message.content.replace(/\[WORKFLOW_PLAN\].*\[\/WORKFLOW_PLAN\]/s, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />
             )}
         </div>
-        {message.visualization && (
-          <div className="mt-2">
-            <DataVisualizer data={message.visualization.data} target={message.visualization.target} />
-          </div>
+        {message.visualization?.isShowing && message.visualization.data && (
+            <div className="mt-2">
+                <DataVisualizer data={message.visualization.data} target={message.visualization.target} />
+            </div>
         )}
         {(message.suggestions || (message.visualization && !message.visualization.isShowing)) && (
             <div className="mt-2 flex flex-wrap gap-2">
@@ -218,9 +220,23 @@ export default function ChatPanel({ className }: { className?: string }) {
                 businessUnits: state.businessUnits,
             });
 
-            const isStartingWorkflow = responseText.includes('[START_WORKFLOW]');
-            if (isStartingWorkflow) {
-                dispatch({ type: 'SET_WORKFLOW', payload: mockWorkflow });
+            const workflowPlanRegex = /\[WORKFLOW_PLAN\](.*)\[\/WORKFLOW_PLAN\]/s;
+            const workflowMatch = responseText.match(workflowPlanRegex);
+            
+            if (workflowMatch && workflowMatch[1]) {
+              try {
+                const planJson = JSON.parse(workflowMatch[1]);
+                const newWorkflow: WorkflowStep[] = planJson.map((step: any, index: number) => ({
+                    ...step,
+                    id: `step-${index + 1}`,
+                    status: 'pending',
+                    dependencies: index > 0 ? [`step-${index}`] : []
+                }));
+                dispatch({ type: 'SET_WORKFLOW', payload: newWorkflow });
+              } catch(e) {
+                console.error("Failed to parse workflow plan:", e);
+                dispatch({ type: 'SET_PROCESSING', payload: false });
+              }
             } else {
                 dispatch({ type: 'SET_PROCESSING', payload: false });
             }
@@ -346,3 +362,5 @@ export default function ChatPanel({ className }: { className?: string }) {
     </>
   );
 }
+
+    
