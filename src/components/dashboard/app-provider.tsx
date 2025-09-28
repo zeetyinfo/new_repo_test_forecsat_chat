@@ -175,10 +175,13 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         messages: state.messages.map(msg => {
           if (msg.id === action.payload.messageId && msg.visualization) {
-            // This is a simplified toggle, it just re-sets the visualization data
-            // to trigger a re-render. A more robust implementation might toggle a visible flag.
-            // For now, we'll assume the component itself handles visibility.
-            return { ...msg };
+            return {
+              ...msg,
+              visualization: {
+                ...msg.visualization,
+                isShowing: !msg.visualization.isShowing,
+              },
+            };
           }
           return msg;
         })

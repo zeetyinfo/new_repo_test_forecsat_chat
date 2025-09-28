@@ -131,9 +131,9 @@ function ChatBubble({ message, onSuggestionClick, onVisualizeClick }: { message:
             <DataVisualizer data={message.visualization.data} target={message.visualization.target} />
           </div>
         )}
-        {(message.suggestions || message.visualization) && (
+        {(message.suggestions || (message.visualization && !message.visualization.isShowing)) && (
             <div className="mt-2 flex flex-wrap gap-2">
-                {message.visualization && (
+                {message.visualization && !message.visualization.isShowing && (
                      <Button size="sm" variant="outline" onClick={() => onVisualizeClick(message.id, message.visualization!.data)}>
                         <BarChart className="mr-2 h-4 w-4" />
                         Visualize Data
@@ -239,10 +239,14 @@ export default function ChatPanel({ className }: { className?: string }) {
             }
             
             let visualization;
-            if(state.selectedLob?.hasData && state.selectedLob?.mockData) {
+            const keywords = ['analyze', 'forecast', 'data', 'visualize'];
+            const shouldVisualize = keywords.some(keyword => messageText.toLowerCase().includes(keyword) || content.toLowerCase().includes(keyword));
+
+            if(shouldVisualize && state.selectedLob?.hasData && state.selectedLob?.mockData) {
                 visualization = {
                     data: state.selectedLob.mockData,
-                    target: 'units' as 'units' | 'revenue'
+                    target: 'units' as 'units' | 'revenue',
+                    isShowing: false,
                 }
             }
 
@@ -278,9 +282,7 @@ export default function ChatPanel({ className }: { className?: string }) {
         submitMessage(suggestion);
     };
     
-    const handleVisualizeClick = (messageId: string, data: WeeklyData[]) => {
-      // This will toggle the visualization on the specific message
-      // We'll dispatch an action to find the message by ID and update it.
+    const handleVisualizeClick = (messageId: string) => {
       dispatch({ type: 'TOGGLE_VISUALIZATION', payload: { messageId } });
     };
 
@@ -300,7 +302,7 @@ export default function ChatPanel({ className }: { className?: string }) {
                       key={message.id} 
                       message={message} 
                       onSuggestionClick={handleSuggestionClick}
-                      onVisualizeClick={handleVisualizeClick} 
+                      onVisualizeClick={() => handleVisualizeClick(message.id)} 
                     />
                 ))}
                  {isAssistantTyping && !state.messages.some(m => m.isTyping) && (

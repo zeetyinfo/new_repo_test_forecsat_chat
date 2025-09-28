@@ -64,6 +64,7 @@ export type ChatMessage = {
   visualization?: {
     data: WeeklyData[];
     target: 'units' | 'revenue';
+    isShowing?: boolean;
   }
 };
 
