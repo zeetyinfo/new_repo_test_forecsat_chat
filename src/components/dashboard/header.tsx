@@ -118,27 +118,30 @@ export default function Header() {
   const handleGenerateReport = async () => {
     setIsReportGenerating(true);
     try {
-        const { selectedBu, selectedLob, messages } = state;
-        const context = `
+      const { selectedBu, selectedLob, messages } = state;
+      const context = `
             Business Unit: ${selectedBu?.name}
             Line of Business: ${selectedLob?.name}
             Data Summary: ${selectedLob?.recordCount} records, completeness ${selectedLob?.dataQuality?.completeness}%, ${selectedLob?.dataQuality?.outliers} outliers.
         `;
-        const history = JSON.stringify(messages.map(m => ({ role: m.role, content: m.content })));
+      const history = JSON.stringify(messages.map(m => ({ role: m.role, content: m.content })));
 
-        const result = await generateReport({
-            conversationHistory: history,
-            analysisContext: context,
-        });
-        
-        setReportMarkdown(result.reportMarkdown);
-        setIsReportViewerOpen(true);
+      const res = await fetch('/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationHistory: history, analysisContext: context })
+      });
 
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const result = await res.json();
+      setReportMarkdown(result.reportMarkdown);
+      setIsReportViewerOpen(true);
     } catch (error) {
-        console.error("Failed to generate report:", error);
-        // Optionally, show a toast notification for the error
+      console.error('Failed to generate report:', error);
     } finally {
-        setIsReportGenerating(false);
+      setIsReportGenerating(false);
     }
   };
 
