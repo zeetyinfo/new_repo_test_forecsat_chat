@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -18,7 +17,7 @@ import { useApp } from './app-provider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AgentMonitorPanel from './agent-monitor';
 import BuLobSelector from './bu-lob-selector';
-import { generateReport } from '@/ai/flows/chatbot-generate-report';
+// Using server API to generate report to avoid bundling server-only Genkit in client
 import ReportViewer from './report-viewer';
 
 const ThemeToggle = () => {
