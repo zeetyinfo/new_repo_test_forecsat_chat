@@ -61,6 +61,9 @@ const initialState: AppState = {
     isOpen: false,
   },
   dataPanelOpen: false,
+  dataPanelMode: 'chart',
+  dataPanelTarget: 'units',
+  dataPanelWidthPct: 40,
   isOnboarding: true,
   queuedUserPrompt: null,
 };
